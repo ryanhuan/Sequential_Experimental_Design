@@ -1,0 +1,5 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
+PROJECT(Sequential_Experimental_Design)
+
+ADD_SUBDIRECTORY(src)

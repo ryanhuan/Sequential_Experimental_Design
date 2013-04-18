@@ -1,0 +1,50 @@
+% General.
+dCompTol = 1.0e-14
+
+% Dynamic programming.
+nStages = 2
+nStatesDim = 2
+initialState = 7.0 9.0
+nControlsDim = 1
+controlsLeftBound = 1.0
+controlsRightBound = 10.0
+nNoiseDim = 1
+noiseStdDevConstant = 1.0
+% Number of parameters should be consistent with what the state describes.
+nParamsDim = 1
+nStochOptPerStateK = 100
+stageCostQuadControlsWeight = 0.01
+
+% ADP value function approximation.
+featuresChoice = 1
+coefsConstructionMethod = 1
+nRegressionSamples = 100
+pOrder = 4
+
+% Stochastic Optimization.
+optMethod = 6
+maxOptIters = 50
+relXNormTerminateNormChoice = 2
+relXNormTerminateTol = 1.0e-6
+nConsecRelXNormTerminateTol = 5
+gradNormChoice = 2
+nObjMC = 1000
+XInitial = 5.5
+randomizeXInitial = 1
+nFinalObjHighQualityMC = 10000
+displayOptProgress = 0
+displayOptSummary = 0
+
+% SARM.
+checkInitialGradient = 0
+% SARMGainSeq = 1 is a/k, and SARMGainSeq = 2 is SPSA gain sequence.
+SARMGainSeq = 1
+% Only applicable to SARMGainSeq = 1.
+gainMultiplier = 5
+% Only applicable to SARMGainSeq = 2.
+detectSPSAParams = 1
+SPSAInputa = 0.16
+SPSAInputc = 0.16
+SPSAInputA = 100.0
+SPSAInputalpha = 0.602
+SPSAInputgamma = 0.101
