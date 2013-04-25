@@ -4,13 +4,14 @@
  * LinearArch
  *********************************************************************/
 
-LinearArch::LinearArch(Controls const &refAlgParams)
+LinearArch::LinearArch(InputParams const &refAlgParams)
 {
   
   /* Initializations. */
   algParams = refAlgParams;
 
   featuresCoefs.assign(algParams.nFeatures, 0.0);
+  featuresVals.assign(algParams.nFeatures, 0.0);
   stateSample.assign(algParams.nStatesDim, 0.0);
   
   /* Total order polynomial features. */
@@ -20,12 +21,11 @@ LinearArch::LinearArch(Controls const &refAlgParams)
     refTable.assign(algParams.nFeatures, vector<double>(algParams.nStatesDim, 0.0));
     int ctrCoords(0);
     vector<int> tempCoords(algParams.nStatesDim, 0);
-//!!!    
-//    permPolyOrders(primary.nStatesDim, primary.pOrder, ctrCoords, tempCoords);
+    permPolyOrders(algParams.nStatesDim, algParams.pOrder, ctrCoords, tempCoords);
   }
   
   /* Construct coefficients via construction. */
-  if (primary.coefsConstructionMethod == 1)
+  if (algParams.coefsConstructionMethod == 1)
   {
     // /* Memory allocation for regression method. Note ATrans is stored
     //  * in its transposed form from the algebraic form of the matrix to
@@ -63,7 +63,7 @@ LinearArch::~LinearArch()
 {
 
   /* Free memory. */
-  if (primary.coefsConstructionMethod == 1)
+  if (algParams.coefsConstructionMethod == 1)
   {
     // delete [] ATrans[0];
     // delete [] ATrans;
@@ -84,50 +84,42 @@ LinearArch::LinearArch(LinearArch const &other)
 {
 
   /* Initializations. */
-  primary = other.primary;
+  // algParams = other.algParams;
 
-  featuresCoefs = new double[primary.nFeatures];
-  stateSample = new double[primary.nStatesDim];
+  featuresCoefs = other.featuresCoefs;
+  featuresVals = other.featuresVals;
+  stateSample = other.stateSample;
 
   /* Total order polynomial features. */
-  if (primary.featuresChoice == 1)
-  {
-    refTable = new int*[primary.nFeatures];
-    refTable[0] = new int[primary.nFeatures * primary.nStatesDim];
-    for (int i = 1; i < primary.nFeatures; i++)
-      refTable[i] = refTable[i - 1] + primary.nStatesDim;
-
-    /* Copy the same refTable from input, assuming it is the same. */
-    for (int i = 0; i < primary.nFeatures * primary.nStatesDim; i++)
-      refTable[0][i] = other.refTable[0][i];
-  }
+  if (algParams.featuresChoice == 1)
+    refTable = other.refTable;
   
   /* Construct coefficients via construction. */
-  if (primary.coefsConstructionMethod == 1)
+  if (algParams.coefsConstructionMethod == 1)
   {
-    /* Memory allocation for regression method. */
-    /* Memory allocation for regression method. Note A is stored in
-     * its transposed form to accomodate LAPACK (which uses its
-     * transpose). Note A is overwritten by right singular vectors
-     * upon output of linear least squares computation. LHS will be
-     * used to store the original matrix. */
-    ATrans = new double*[primary.nFeatures];
-    LHS = new double*[primary.nRegressionSamples];
-    ATrans[0] = new double[primary.nFeatures * primary.nRegressionSamples];
-    LHS[0] = new double[primary.nRegressionSamples * primary.nFeatures];
-    for (int i = 1; i < primary.nFeatures; i++)
-      ATrans[i] = ATrans[i - 1] + primary.nRegressionSamples;
-    for (int i = 1; i < primary.nRegressionSamples; i++)
-      LHS[i] = LHS[i - 1] + primary.nFeatures;
-    B = new double[primary.nRegressionSamples];
-    RHS = new double[primary.nRegressionSamples];
-    /* Size of soln array required to be at least
-     * primary.nRegressionSamples for LAPACK. */
-    soln = new double[primary.nFeatures];
+    // /* Memory allocation for regression method. */
+    // /* Memory allocation for regression method. Note A is stored in
+    //  * its transposed form to accomodate LAPACK (which uses its
+    //  * transpose). Note A is overwritten by right singular vectors
+    //  * upon output of linear least squares computation. LHS will be
+    //  * used to store the original matrix. */
+    // ATrans = new double*[primary.nFeatures];
+    // LHS = new double*[primary.nRegressionSamples];
+    // ATrans[0] = new double[primary.nFeatures * primary.nRegressionSamples];
+    // LHS[0] = new double[primary.nRegressionSamples * primary.nFeatures];
+    // for (int i = 1; i < primary.nFeatures; i++)
+    //   ATrans[i] = ATrans[i - 1] + primary.nRegressionSamples;
+    // for (int i = 1; i < primary.nRegressionSamples; i++)
+    //   LHS[i] = LHS[i - 1] + primary.nFeatures;
+    // B = new double[primary.nRegressionSamples];
+    // RHS = new double[primary.nRegressionSamples];
+    // /* Size of soln array required to be at least
+    //  * primary.nRegressionSamples for LAPACK. */
+    // soln = new double[primary.nFeatures];
 
-    singularValues = new double[primary.nFeatures];
-    lwork = 3 * primary.nFeatures + primary.nRegressionSamples;
-    work = new double[lwork];
+    // singularValues = new double[primary.nFeatures];
+    // lwork = 3 * primary.nFeatures + primary.nRegressionSamples;
+    // work = new double[lwork];
   }
 
   /* Random number generator initialization. */
@@ -145,50 +137,43 @@ LinearArch& LinearArch::operator=(LinearArch const &rhs)
   {
 
     /* Initializations. */
-    primary = rhs.primary;
-
-    featuresCoefs = new double[primary.nFeatures];
-    stateSample = new double[primary.nStatesDim];
-
+    algParams = rhs.algParams;
+    
+    featuresCoefs = rhs.featuresCoefs;
+    featuresVals = rhs.featuresVals;
+    stateSample = rhs.stateSample;
+    
     /* Total order polynomial features. */
-    if (primary.featuresChoice == 1)
-    {
-      refTable = new int*[primary.nFeatures];
-      refTable[0] = new int[primary.nFeatures * primary.nStatesDim];
-      for (int i = 1; i < primary.nFeatures; i++)
-	refTable[i] = refTable[i - 1] + primary.nStatesDim;
-
-      /* Copy the same refTable from input, assuming it is the same. */
-      for (int i = 0; i < primary.nFeatures * primary.nStatesDim; i++)
-	refTable[0][i] = rhs.refTable[0][i];
-    }
-  
+    if (algParams.featuresChoice == 1)
+      refTable = rhs.refTable;
+    
     /* Construct coefficients via construction. */
-    if (primary.coefsConstructionMethod == 1)
+    if (algParams.coefsConstructionMethod == 1)
     {
-      /* Memory allocation for regression method. */
-      /* Memory allocation for regression method. Note A is stored in
-       * its transposed form to accomodate LAPACK (which uses its
-       * transpose). Note A is overwritten by right singular vectors
-       * upon output of linear least squares computation. LHS will be
-       * used to store the original matrix. */
-      ATrans = new double*[primary.nFeatures];
-      LHS = new double*[primary.nRegressionSamples];
-      ATrans[0] = new double[primary.nFeatures * primary.nRegressionSamples];
-      LHS[0] = new double[primary.nRegressionSamples * primary.nFeatures];
-      for (int i = 1; i < primary.nFeatures; i++)
-	ATrans[i] = ATrans[i - 1] + primary.nRegressionSamples;
-      for (int i = 1; i < primary.nRegressionSamples; i++)
-	LHS[i] = LHS[i - 1] + primary.nFeatures;
-      B = new double[primary.nRegressionSamples];
-      RHS = new double[primary.nRegressionSamples];
-      /* Size of soln array required to be at least
-       * primary.nRegressionSamples for LAPACK. */
-      soln = new double[primary.nFeatures];
-
-      singularValues = new double[primary.nFeatures];
-      lwork = 3 * primary.nFeatures + primary.nRegressionSamples;
-      work = new double[lwork];
+      // /* Memory allocation for regression method. */
+      // /* Memory allocation for regression method. Note A is stored in
+      //  * its transposed form to accomodate LAPACK (which uses its
+      //  * transpose). Note A is overwritten by right singular vectors
+      //  * upon output of linear least squares computation. LHS will be
+      //  * used to store the original matrix. */
+      // ATrans = new double*[primary.nFeatures];
+      // LHS = new double*[primary.nRegressionSamples];
+      // ATrans[0] = new double[primary.nFeatures * primary.nRegressionSamples];
+      // LHS[0] = new double[primary.nRegressionSamples * primary.nFeatures];
+      // for (int i = 1; i < primary.nFeatures; i++)
+      //   ATrans[i] = ATrans[i - 1] + primary.nRegressionSamples;
+      // for (int i = 1; i < primary.nRegressionSamples; i++)
+      //   LHS[i] = LHS[i - 1] + primary.nFeatures;
+      // B = new double[primary.nRegressionSamples];
+      // RHS = new double[primary.nRegressionSamples];
+      // /* Size of soln array required to be at least
+      //  * primary.nRegressionSamples for LAPACK. */
+      // soln = new double[primary.nFeatures];
+      
+      // singularValues = new double[primary.nFeatures];
+      // lwork = 3 * primary.nFeatures + primary.nRegressionSamples;
+      // work = new double[lwork];
+      
     }
     
     /* Random number generator initialization. */
@@ -204,7 +189,7 @@ LinearArch& LinearArch::operator=(LinearArch const &rhs)
 }
 
 void LinearArch::permPolyOrders(int zetaRemain, int const upperLimit, 
-				int &ctrCoords, int* const tempCoords)
+				int &ctrCoords, vector<int> &tempCoords)
 {
 
   /* Base case. */
@@ -212,8 +197,8 @@ void LinearArch::permPolyOrders(int zetaRemain, int const upperLimit,
   {
     for (int z = 0; z < upperLimit + 1; z++)
     {
-      tempCoords[primary.nStatesDim - 1] = z;
-      for (int i = 0; i < primary.nStatesDim; i++)
+      tempCoords[algParams.nStatesDim - 1] = z;
+      for (int i = 0; i < algParams.nStatesDim; i++)
 	refTable[ctrCoords][i] = tempCoords[i];
       ctrCoords++;
     }
@@ -226,93 +211,93 @@ void LinearArch::permPolyOrders(int zetaRemain, int const upperLimit,
 
     for (int z = 0; z < upperLimit + 1; z++)
     {
-      tempCoords[primary.nStatesDim - 1 - zetaRemain] = z;
+      tempCoords[algParams.nStatesDim - 1 - zetaRemain] = z;
       permPolyOrders(zetaRemain, upperLimit - z, ctrCoords, tempCoords);
     }
   }
 
 }
 
-void LinearArch::makeCoefs(double (*trueFcnRef)(Controls const &, GenericInputs &, 
-						double const * const),
-			   GenericInputs &trueFcnInputsRef)
-{
+// void LinearArch::makeCoefs(double (*trueFcnRef)(Controls const &, GenericInputs &, 
+// 						double const * const),
+// 			   GenericInputs &trueFcnInputsRef)
+// {
 
-  /* Set pointer to true function. */
-  trueFcn = trueFcnRef;
-  trueFcnInputs = trueFcnInputsRef;
+//   /* Set pointer to true function. */
+//   trueFcn = trueFcnRef;
+//   trueFcnInputs = trueFcnInputsRef;
 
-  switch (primary.coefsConstructionMethod)
-  {
-  case 1:
-    /* Regression. */
+//   switch (primary.coefsConstructionMethod)
+//   {
+//   case 1:
+//     /* Regression. */
 
-    /* Sample regression data points. */
-    for (int p = 0; p < primary.nRegressionSamples; p++)
-    {
+//     /* Sample regression data points. */
+//     for (int p = 0; p < primary.nRegressionSamples; p++)
+//     {
 
-      /* !!! Currently sample according to prior only, in future want
-       * to sample according to the approximated state measure,
-       * perhaps adaptively. */
-      stateSample[0] = gsl_ran_gaussian(generator, 1.0) 
-	* sqrt(primary.initialState[1]) 
-	+ primary.initialState[0];
-      stateSample[1] = gsl_rng_uniform(generator)
-      	* (primary.initialState[1] - 1.0e-5)
-      	+ 1.0e-5;
+//       /* !!! Currently sample according to prior only, in future want
+//        * to sample according to the approximated state measure,
+//        * perhaps adaptively. */
+//       stateSample[0] = gsl_ran_gaussian(generator, 1.0) 
+// 	* sqrt(primary.initialState[1]) 
+// 	+ primary.initialState[0];
+//       stateSample[1] = gsl_rng_uniform(generator)
+//       	* (primary.initialState[1] - 1.0e-5)
+//       	+ 1.0e-5;
 
-      /* Evaluate the features on this state, and construct the LHS
-       * matrix. */
-      evalAllFeatures(stateSample, LHS[p]); 
-      for (int i = 0; i < primary.nFeatures; i++)
-	ATrans[i][p] = LHS[p][i];
+//       /* Evaluate the features on this state, and construct the LHS
+//        * matrix. */
+//       evalAllFeatures(stateSample, LHS[p]); 
+//       for (int i = 0; i < primary.nFeatures; i++)
+// 	ATrans[i][p] = LHS[p][i];
       
-      /* Evaluate the true function values, and construct the RHS
-       * vector. */
-      B[p] = trueFcn(primary, trueFcnInputs, stateSample);
-      RHS[p] = B[p];
-    }
+//       /* Evaluate the true function values, and construct the RHS
+//        * vector. */
+//       B[p] = trueFcn(primary, trueFcnInputs, stateSample);
+//       RHS[p] = B[p];
+//     }
 
-    for (int i = 0; i < primary.nRegressionSamples; i++)
-    {
-      for (int j = 0; j < primary.nFeatures; j++)
-	cout << LHS[i][j] << "  ";
-      cout << endl;
-    }
-    cout << endl;
+//     for (int i = 0; i < primary.nRegressionSamples; i++)
+//     {
+//       for (int j = 0; j < primary.nFeatures; j++)
+// 	cout << LHS[i][j] << "  ";
+//       cout << endl;
+//     }
+//     cout << endl;
 
-    for (int i = 0; i < primary.nRegressionSamples; i++)
-      cout << RHS[i] << endl;
-    cout << endl;
+//     for (int i = 0; i < primary.nRegressionSamples; i++)
+//       cout << RHS[i] << endl;
+//     cout << endl;
 
-    /* Solve linear least squares problem. Linear least square solve
-     * verified with MATLAB. */
-    linearLeastSquares(primary.nRegressionSamples, primary.nFeatures, 
-    		       ATrans, singularValues, B, work, lwork, soln);
+//     /* Solve linear least squares problem. Linear least square solve
+//      * verified with MATLAB. */
+//     linearLeastSquares(primary.nRegressionSamples, primary.nFeatures, 
+//     		       ATrans, singularValues, B, work, lwork, soln);
     
-    /* Store features coefficients. */
-    for (int i = 0; i < primary.nFeatures; i++)
-      featuresCoefs[i] = soln[i];
+//     /* Store features coefficients. */
+//     for (int i = 0; i < primary.nFeatures; i++)
+//       featuresCoefs[i] = soln[i];
     
-    break;
+//     break;
     
-  default:
-    cout << "Error: Approximation function coefficient construction method " 
-	 << primary.coefsConstructionMethod << " not available." << endl;
-    exit(1);
-  }
+//   default:
+//     cout << "Error: Approximation function coefficient construction method " 
+// 	 << primary.coefsConstructionMethod << " not available." << endl;
+//     exit(1);
+//   }
   
-}
+// }
 
-void LinearArch::evalAllFeatures(double const * const inputVar, 
-				 double * const storage)
+void LinearArch::evalAllFeatures(vector<double> const &inputVar, 
+				 vector<double> &storage)
 {
   
-  switch (primary.featuresChoice)
+  switch (algParams.featuresChoice)
   {
   case 1:
     /* Total order polynomial. */
-    for (int i = 0; i < primary.nFeatures; i++)
+    for (unsigned int i = 0; i < storage.size(); i++)
       storage[i] = pow(inputVar[0], double(refTable[i][0])) 
 	* pow(inputVar[1], double(refTable[i][1]));
 
@@ -330,35 +315,35 @@ void LinearArch::evalAllFeatures(double const * const inputVar,
     break;
     
   default:
-    cout << "Error: Features choice " << primary.featuresChoice
+    cout << "Error: Features choice " << algParams.featuresChoice
 	 << " not available." << endl;
     exit(1);
   }
   
 }
 
-double LinearArch::evalArchitecture(Controls const &primaryExternal, 
-				    double const * const state)
+double LinearArch::evalArchitecture(InputParams const &algParamsExternal, 
+				    vector<double> const &state)
 {
 
   /* Initialization. */
   double value(0.0);
-
+  
   /* Evaluate all features on the current input state, and then sum
    * them weighed according to the coefficients. */
   evalAllFeatures(state, featuresVals);
-  for (int i = 0; i < primary.nFeatures; i++)
+  for (unsigned int i = 0; i < featuresCoefs.size(); i++)
     value += featuresCoefs[i] * featuresVals[i];
   
   return value;
   
 }
 
-void LinearArch::exportCoefs(double* const coefsExternal)
+void LinearArch::exportCoefs(vector<double> &coefsExternal)
 {
   
   /* Extract the coefs to external storage. */
-  for (int i = 0; i < primary.nFeatures; i++)
+  for (unsigned int i = 0; i < featuresCoefs.size(); i++)
     coefsExternal[i] = featuresCoefs[i];
   
 }

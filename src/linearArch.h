@@ -7,6 +7,11 @@
 #ifndef _LINEARARCH_H
 #define _LINEARARCH_H
 
+#include <math.h>
+
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_rng.h>
+
 #include "inputParams.h"
 //#include "tools.h"
 
@@ -81,7 +86,7 @@ public:
   */
   LinearArch& operator=(LinearArch const &);
 
-  /*! \fn void permPolyOrders(int, int const, int &, int* const);
+  /*! \fn void permPolyOrders(int, int const, int &, vector<int> &);
     
     \brief Computes all the permutation of indexes for the i vector
     according to the upper limit maximum order. It is used for
@@ -93,52 +98,55 @@ public:
     This changes at each recursion stage.
     \param ctrCoords A reference to how many coordinates have been
     produced so far in the recursion.
-    \param tempCoords A 1D array to temporarily store an instance of
+    \param tempCoords A vector to temporarily store an instance of
     the coordinate.
   */
-  void permPolyOrders(int, int const, int &, int* const);
+  void permPolyOrders(int, int const, int &, vector<int> &);
 
-  /*! \fn void makeCoefs(double (*)(Controls const &, GenericInputs &,
-    double const * const), GenericInputs &);
+  // /*! \fn void makeCoefs(double (*)(Controls const &, GenericInputs &,
+  //   double const * const), GenericInputs &);
 
-    \brief Computes the linear architecture coefficients.
+  //   \brief Computes the linear architecture coefficients.
 
-    \param trueFcnRef Pointer to the true function. 
-    \param trueFcnInputsRef Reference to the true function input struct.
+  //   \param trueFcnRef Pointer to the true function. 
+  //   \param trueFcnInputsRef Reference to the true function input struct.
+  // */
+  // void makeCoefs(double (*)(Controls const &, GenericInputs &, 
+  // 			    double const * const), GenericInputs &);
+
+  /*! \fn void evalAllFeatures(vector<double> const &, vector<double>
+    &);
+    
+    \brief Evaluates the feature functions at the given input variable
+    vector.
+
+    \param inputVar Input variable vector.
+    \param storage Storage vector for evaluated feature values. 
   */
-  void makeCoefs(double (*)(Controls const &, GenericInputs &, 
-			    double const * const), GenericInputs &);
+  void evalAllFeatures(vector<double> const &, vector<double> &);
 
-  /*! \fn void evalAllFeatures(double const * const, double * const);
+  /*! \fn double evalArchitecture(InputParams const &, vector<double>
+    const &);
     
     \brief Evaluates the feature functions at the given input variable
     value.
 
-    \param inputVar Input variable value.
-    \param storage Storage array for evaluated feature values. 
-  */
-  void evalAllFeatures(double const * const, double * const);
-
-  /*! \fn double evalAllFeatures(double const * const, double * const);
-    
-    \brief Evaluates the feature functions at the given input variable
-    value.
-
-    \param primaryExternal Reference to primary controls. This should 
-    not be needed since class already has controls information.
+    \param algParamsExternal Reference to external algorithm parameters. 
+    This should not be used since class already has input parameters 
+    information.
     \param inputVar Input variable value. 
 
     \return Value of architecture.
   */
-  double evalArchitecture(Controls const &, double const * const);
+  double evalArchitecture(InputParams const &, vector<double> const &);
 
-  /*! \fn void exportCoefs(double* const);
+  /*! \fn void exportCoefs(vector<double> &);
     
     \brief Export the coefs to external storage.
     
-    \param coefsExternal External coefs storage.
+    \param coefsExternal External coefs storage vector.
   */
-  void exportCoefs(double* const);
+  void exportCoefs(vector<double> &);
 
 };
 

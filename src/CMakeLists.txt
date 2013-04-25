@@ -4,7 +4,7 @@ PROJECT(Sequential_Experimental_Design)
 
 ADD_DEFINITIONS(-Wall -O3 -g -pg -llapack -lblas -lpthread -lgsl -lgslcblas -lm)
 
-SET(SRC_SOURCE_FILES main.cpp fileRead.cpp inputParams.cpp)
+SET(SRC_SOURCE_FILES main.cpp fileRead.cpp inputParams.cpp linearArch.cpp)
 ADD_EXECUTABLE(main.x ${SRC_SOURCE_FILES})
 
 # Required packages for this project:

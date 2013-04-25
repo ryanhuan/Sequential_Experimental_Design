@@ -16,6 +16,7 @@
 #include "mpi.h"
 
 #include "inputParams.h"
+#include "linearArch.h"
 
 using namespace std;
 

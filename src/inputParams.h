@@ -22,8 +22,8 @@ using namespace std;
   \brief Struct for algorithm input parameters.  
 
   This class stores the input and control parameters for this
-  algorithm. All members are public. Only one instance of this class
-  will be created, and only references will be made to it.
+  algorithm. All members are public. All copies will be by value since
+  we will not use pointers as members in this class.
 
 */
 class InputParams
@@ -112,6 +112,12 @@ public:
   // */
   // double SPSAInputgamma;
 
+  /*! \fn InputParams();
+    
+    \brief Default constructor of the InputParams class.
+  */
+  InputParams();
+
   /*! \fn InputParams(string);
     
     \brief Constructor of the InputParams class.
@@ -120,12 +126,36 @@ public:
   */
   InputParams(string const);
 
+  /*! \fn InputParams(InputParams const &);
+    
+    \brief Copy constructor of the InputParams class.
+    
+    \param other Reference to the source class to be copied from.
+  */
+  InputParams(InputParams const &);
+
   /*! \fn ~InputParams();
     
     \brief Destructor of the InputParams class.
 
   */
   ~InputParams();
+
+  /*! \fn InputParams& operator=(InputParams const &);
+    
+    \brief The = operator of the InputParams class.
+
+    \param rhs Reference to input class.
+    
+    \return Reference to output class.
+  */
+  InputParams& operator=(InputParams const &);
+
+  /*! \fn void setDefaultValues();
+    
+    \brief Sets the default parameter values.
+  */
+  void setDefaultValues();
 
   /*! \fn void readInputParamsFile(string const);
     

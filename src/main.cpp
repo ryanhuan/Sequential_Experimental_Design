@@ -19,14 +19,14 @@ int main(int argc, char **argv)
   algParams.addMPIInfo(nTasks, rank);
 
   /* Linear architecture initialization. */
-  vector<double> tempArchCoefs(primary.nFeatures, 0.0);
-  // vector<LinearArch> arch(primary.nStages - 1, primary);
+  vector<double> tempArchCoefs(algParams.nFeatures, 0.0);
+  vector<LinearArch> arch(algParams.nStages - 1, algParams);
   // GenericInputs maxExpInputs;
   
-  // /* DP algorithm (backward induction), first construct all the
-  //  * surrogate functions using linear architecture. */
-  // for (int k = arch.size() - 1; k > -1; k--)
-  // {
+  /* DP algorithm (backward induction), first construct all the
+   * surrogate functions using linear architecture. */
+  for (int k = int(arch.size()) - 1; k > -1; k--)
+  {
   //   if (primary.rank == 0)
   //     cout << "Making TJ_" << k + 1 << ". " << endl;
     
@@ -51,11 +51,11 @@ int main(int argc, char **argv)
   //     arch[k].makeCoefs(maxExpectation, maxExpInputs);
   //   }
 
-  //   arch[k].exportCoefs(tempArchCoefs);
+    arch[k].exportCoefs(tempArchCoefs);
 
-  //   for (int i = 0; i < tempArchCoefs.size(); i++)
-  //     cout << tempArchCoefs[i] << endl;
-  // }
+    for (unsigned int i = 0; i < tempArchCoefs.size(); i++)
+      cout << tempArchCoefs[i] << endl;
+  }
 
   /* Finalize MPI. */
   MPI_Finalize();

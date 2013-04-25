@@ -5,7 +5,149 @@
  * InputParams
  *********************************************************************/
 
+InputParams::InputParams()
+{
+  setDefaultValues();
+}
+
 InputParams::InputParams(string const fName)
+{
+  setDefaultValues();
+  readInputParamsFile(fName);
+}
+
+InputParams::InputParams(InputParams const &other)
+{
+  
+  /* General. */
+  doubleCompTol = other.doubleCompTol;
+  
+  /* MPI. */
+  nTasks = other.nTasks;
+  rank = other.rank;
+  status = other.status;
+  
+  /* Dynamic programming. */
+  nStages = other.nStages;
+  nStatesDim = other.nStatesDim;
+  nControlsDim = other.nControlsDim;
+  nDisturbanceDim = other.nDisturbanceDim;
+  nInferenceParamsDim = other.nInferenceParamsDim;
+  controlsLowerBounds = other.controlsLowerBounds;
+  controlsUpperBounds = other.controlsUpperBounds;
+  nStochOptPerState = other.nStochOptPerState;
+  // systemEqnPtr = other.systemEqnPtr;
+  // stageCostPtr = other.stageCostPtr;
+  
+  /* ADP value function approximation. */
+  featuresChoice = other.featuresChoice;
+  pOrder = other.pOrder;
+  coefsConstructionMethod = other.coefsConstructionMethod;
+  nRegressionSamples = other.nRegressionSamples;
+  nFeatures = other.nFeatures;
+  
+  // /* Stochastic Optimization. */
+  //  optMethod = 1;
+  //  maxOptIters = 0;
+  //  relXNormTerminateNormChoice = 2;
+  //  relXNormTerminateTol = 0.0;
+  //  nConsecRelXNormTerminateTol = 1;
+  //  gradNormChoice = 2;
+  //  nObjMC = 1;
+  //  XInitial = NULL;
+  //  randomizeXInitial = 0;
+  //  nFinalObjHighQualityMC = 1;
+  //  displayOptProgress = 1;
+  //  displayOptSummary = 1;
+  
+  // /* SARM. */
+  //  checkInitialGradient = 0;
+  //  SARMGainSeq = 1;
+  //  gainMultiplier = 1.0;
+  //  detectSPSAParams = 0;
+  //  SPSAInputa = 0.16;
+  //  SPSAInputc = 0.16;
+  //  SPSAInputA = 100.0;
+  //  SPSAInputalpha = 0.602;
+  //  SPSAInputgamma = 0.101;
+  
+}
+
+InputParams::~InputParams()
+{
+
+  /* Free memory. */
+  // delete []  XInitial;
+  
+}
+
+InputParams& InputParams::operator=(InputParams const &rhs)
+{
+
+  /* Protect against invalid self-assignment. */
+  if (this != &rhs)
+  {
+
+    /* General. */
+    doubleCompTol = rhs.doubleCompTol;
+    
+    /* MPI. */
+    nTasks = rhs.nTasks;
+    rank = rhs.rank;
+    status = rhs.status;
+    
+    /* Dynamic programming. */
+    nStages = rhs.nStages;
+    nStatesDim = rhs.nStatesDim;
+    nControlsDim = rhs.nControlsDim;
+    nDisturbanceDim = rhs.nDisturbanceDim;
+    nInferenceParamsDim = rhs.nInferenceParamsDim;
+    controlsLowerBounds = rhs.controlsLowerBounds;
+    controlsUpperBounds = rhs.controlsUpperBounds;
+    nStochOptPerState = rhs.nStochOptPerState;
+    // systemEqnPtr = rhs.systemEqnPtr;
+    // stageCostPtr = rhs.stageCostPtr;
+  
+    /* ADP value function approximation. */
+    featuresChoice = rhs.featuresChoice;
+    pOrder = rhs.pOrder;
+    coefsConstructionMethod = rhs.coefsConstructionMethod;
+    nRegressionSamples = rhs.nRegressionSamples;
+    nFeatures = rhs.nFeatures;
+    
+    // /* Stochastic Optimization. */
+    //  optMethod = 1;
+    //  maxOptIters = 0;
+    //  relXNormTerminateNormChoice = 2;
+    //  relXNormTerminateTol = 0.0;
+    //  nConsecRelXNormTerminateTol = 1;
+    //  gradNormChoice = 2;
+    //  nObjMC = 1;
+    //  XInitial = NULL;
+    //  randomizeXInitial = 0;
+    //  nFinalObjHighQualityMC = 1;
+    //  displayOptProgress = 1;
+    //  displayOptSummary = 1;
+    
+    // /* SARM. */
+    //  checkInitialGradient = 0;
+    //  SARMGainSeq = 1;
+    //  gainMultiplier = 1.0;
+    //  detectSPSAParams = 0;
+    //  SPSAInputa = 0.16;
+    //  SPSAInputc = 0.16;
+    //  SPSAInputA = 100.0;
+    //  SPSAInputalpha = 0.602;
+    //  SPSAInputgamma = 0.101;
+    
+  }
+  
+  /* By convention, always return *this. */
+  return *this;
+  
+}
+
+void InputParams::setDefaultValues()
 {
 
   /* Set default values, no memory allocation has been made at this
@@ -60,18 +202,6 @@ InputParams::InputParams(string const fName)
   //  SPSAInputalpha = 0.602;
   //  SPSAInputgamma = 0.101;
 
-  /* Read input file, all memory allocation is made externally as file
-   * is read. */
-  readInputParamsFile(fName);
-
-}
-
-InputParams::~InputParams()
-{
-
-  /* Free memory. */
-  // delete []  XInitial;
-  
 }
 
 void InputParams::readInputParamsFile(string const fName)
