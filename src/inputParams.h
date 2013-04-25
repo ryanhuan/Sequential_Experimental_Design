@@ -8,8 +8,12 @@
 #define _INPUTPARAMS_H
 
 #include <iostream>
+#include <string.h>
+#include <vector>
 
 #include "mpi.h"
+
+#include "fileRead.h"
 
 using namespace std;
 
@@ -41,14 +45,15 @@ public:
   int nControlsDim;             //!< Control space dimension.
   int nDisturbanceDim;          //!< Disturbance space dimension.
   int nInferenceParamsDim;      //!< Inference parameters space dimension. Ensure consistent with nStatesDim.
-  vector<double> controlsBounds;//!< Bounds of the control space, assumed box constraint.
-  int nStochOptPerStateK;       //!< Number of repeated stochastic optimization runs at every evaluation of J_k(x_k).
-  /*! \brief Function pointer to the system equation, assumes independent of stage. */
-  void (*systemEqnPtr) (InputParams const &, State const &, vector<double> const &,
-			vector<double> const &, State const &);
-  /*! \brief Function pointer to the stage cost, assumes independent of stage. */
-  double (*stageCostPtr) (InputParams const &, State const &, vector<double> const &,
-			  vector<double> const &);
+  vector<double> controlsLowerBounds;//!< Lower bounds of the control space, assumed box constraint.
+  vector<double> controlsUpperBounds;//!< Upper bounds of the control space, assumed box constraint.
+  int nStochOptPerState;        //!< Number of repeated stochastic optimization runs at every evaluation of J_k(x_k).
+  // /*! \brief Function pointer to the system equation, assumes independent of stage. */
+  // void (*systemEqnPtr) (InputParams const &, State const &, vector<double> const &,
+  // 			vector<double> const &, State const &);
+  // /*! \brief Function pointer to the stage cost, assumes independent of stage. */
+  // double (*stageCostPtr) (InputParams const &, State const &, vector<double> const &,
+  // 			  vector<double> const &);
   
   /* ADP value function approximation. */
   int featuresChoice;           //!< 1-total order polynomial, 2-Gaussian KL terms.
@@ -107,20 +112,13 @@ public:
   // */
   // double SPSAInputgamma;
 
-  /*! \fn InputParams();
-    
-    \brief Constructor of the InputParams class with no function input.
-
-  */
-  InputParams();
-
   /*! \fn InputParams(string);
     
-    \brief Constructor of the InputParams class with function input.
+    \brief Constructor of the InputParams class.
     
     \param fName Input file name.
   */
-  InputParams(string);
+  InputParams(string const);
 
   /*! \fn ~InputParams();
     
@@ -129,15 +127,22 @@ public:
   */
   ~InputParams();
 
-/*! \fn void addMPIInfoControls(Controls &, int const, int const);
-  
-  \brief Stores the MPI variables in the Controls structure.
-  
-  \param primary Reference to controls structure of interest.
-  \param nTasks Total number of CPUs.
-  \param rank Current CPU rank.
-*/
-void addMPIInfoControls(Controls &, int const, int const);
+  /*! \fn void readInputParamsFile(string const);
+    
+    \brief Reads the input parameters from input file.
+
+    \param fName Input file name.
+  */
+  void readInputParamsFile(string const);
+
+  /*! \fn void addMPIInfo(int const, int const);
+    
+    \brief Stores the MPI variables in the Controls structure.
+    
+    \param nTasks Total number of CPUs.
+    \param rank Current CPU rank.
+  */
+  void addMPIInfo(int const, int const);
   
 };
 

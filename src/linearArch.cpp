@@ -4,58 +4,52 @@
  * LinearArch
  *********************************************************************/
 
-LinearArch::LinearArch(Controls const &refControls)
+LinearArch::LinearArch(Controls const &refAlgParams)
 {
   
   /* Initializations. */
-  primary = refControls;
+  algParams = refAlgParams;
 
-  featuresCoefs = new double[primary.nFeatures];
-  stateSample = new double[primary.nStatesDim];
-
+  featuresCoefs.assign(algParams.nFeatures, 0.0);
+  stateSample.assign(algParams.nStatesDim, 0.0);
+  
   /* Total order polynomial features. */
-  if (primary.featuresChoice == 1)
+  if (algParams.featuresChoice == 1)
   {
-    refTable = new int*[primary.nFeatures];
-    refTable[0] = new int[primary.nFeatures * primary.nStatesDim];
-    for (int i = 1; i < primary.nFeatures; i++)
-      refTable[i] = refTable[i - 1] + primary.nStatesDim;
-
     /* Make refTable. */
+    refTable.assign(algParams.nFeatures, vector<double>(algParams.nStatesDim, 0.0));
     int ctrCoords(0);
-    int * tempCoords = new int[primary.nStatesDim];
-    
-    permPolyOrders(primary.nStatesDim, primary.pOrder, ctrCoords, tempCoords);
-
-    delete [] tempCoords;
+    vector<int> tempCoords(algParams.nStatesDim, 0);
+//!!!    
+//    permPolyOrders(primary.nStatesDim, primary.pOrder, ctrCoords, tempCoords);
   }
   
   /* Construct coefficients via construction. */
   if (primary.coefsConstructionMethod == 1)
   {
-    /* Memory allocation for regression method. Note ATrans is stored
-     * in its transposed form from the algebraic form of the matrix to
-     * accomodate LAPACK (which uses its transpose). Note ATrans is
-     * overwritten by right singular vectors upon output of linear
-     * least squares computation. LHS (in non-transposed form) will be
-     * used to store the original matrix. */
-    ATrans = new double*[primary.nFeatures];
-    LHS = new double*[primary.nRegressionSamples];
-    ATrans[0] = new double[primary.nFeatures * primary.nRegressionSamples];
-    LHS[0] = new double[primary.nRegressionSamples * primary.nFeatures];
-    for (int i = 1; i < primary.nFeatures; i++)
-      ATrans[i] = ATrans[i - 1] + primary.nRegressionSamples;
-    for (int i = 1; i < primary.nRegressionSamples; i++)
-      LHS[i] = LHS[i - 1] + primary.nFeatures;
-    B = new double[primary.nRegressionSamples];
-    RHS = new double[primary.nRegressionSamples];
-    /* Size of soln array required to be at least
-     * primary.nRegressionSamples for LAPACK. */
-    soln = new double[primary.nFeatures];
+    // /* Memory allocation for regression method. Note ATrans is stored
+    //  * in its transposed form from the algebraic form of the matrix to
+    //  * accomodate LAPACK (which uses its transpose). Note ATrans is
+    //  * overwritten by right singular vectors upon output of linear
+    //  * least squares computation. LHS (in non-transposed form) will be
+    //  * used to store the original matrix. */
+    // ATrans = new double*[primary.nFeatures];
+    // LHS = new double*[primary.nRegressionSamples];
+    // ATrans[0] = new double[primary.nFeatures * primary.nRegressionSamples];
+    // LHS[0] = new double[primary.nRegressionSamples * primary.nFeatures];
+    // for (int i = 1; i < primary.nFeatures; i++)
+    //   ATrans[i] = ATrans[i - 1] + primary.nRegressionSamples;
+    // for (int i = 1; i < primary.nRegressionSamples; i++)
+    //   LHS[i] = LHS[i - 1] + primary.nFeatures;
+    // B = new double[primary.nRegressionSamples];
+    // RHS = new double[primary.nRegressionSamples];
+    // /* Size of soln array required to be at least
+    //  * primary.nRegressionSamples for LAPACK. */
+    // soln = new double[primary.nFeatures];
 
-    singularValues = new double[primary.nFeatures];
-    lwork = 3 * primary.nFeatures + primary.nRegressionSamples;
-    work = new double[lwork];
+    // singularValues = new double[primary.nFeatures];
+    // lwork = 3 * primary.nFeatures + primary.nRegressionSamples;
+    // work = new double[lwork];
   }
   
   /* Random number generator initialization. */
@@ -69,26 +63,17 @@ LinearArch::~LinearArch()
 {
 
   /* Free memory. */
-  delete [] featuresCoefs;
-  delete [] stateSample;
-
-  if (primary.featuresChoice == 1)
-  {
-    delete [] refTable[0];
-    delete [] refTable;
-  }
-
   if (primary.coefsConstructionMethod == 1)
   {
-    delete [] ATrans[0];
-    delete [] ATrans;
-    delete [] LHS[0];
-    delete [] LHS;
-    delete [] B;
-    delete [] RHS;
-    delete [] soln;
-    delete [] singularValues;
-    delete [] work;
+    // delete [] ATrans[0];
+    // delete [] ATrans;
+    // delete [] LHS[0];
+    // delete [] LHS;
+    // delete [] B;
+    // delete [] RHS;
+    // delete [] soln;
+    // delete [] singularValues;
+    // delete [] work;
   }
   
   gsl_rng_free(generator);

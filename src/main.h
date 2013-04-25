@@ -1,8 +1,8 @@
 /*! \file main.h 
 
   \brief Sequential experimental design via approximate dynnamic
-  programming, using linear architecture to approximate cost-to-go
-  functions.
+  programming.
+
 */
 #ifndef _MAIN_H
 #define _MAIN_H
@@ -15,10 +15,7 @@
 
 #include "mpi.h"
 
-#include "linearArch.h"
-#include "structDef.h"
-#include "tools.h"
-#include "userFunctions.h"
+#include "inputParams.h"
 
 using namespace std;
 

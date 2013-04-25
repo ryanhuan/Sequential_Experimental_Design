@@ -2,12 +2,13 @@
   
   \brief Class and functions concerning the linear architecture of
   approximation.
+
 */
 #ifndef _LINEARARCH_H
 #define _LINEARARCH_H
 
-#include "structDef.h"
-#include "tools.h"
+#include "inputParams.h"
+//#include "tools.h"
 
 /*! \class LinearArch
 
@@ -21,7 +22,7 @@ class LinearArch
 {
   
   /* Controls. */
-  Controls primary;                 //!< Controls.
+  InputParams algParams;            //!< Algorithm parameters.
   gsl_rng_type const * rngType;     //!< GSL random number generator type.
   gsl_rng* generator;               //!< GSL random number generator 1 for noise.
   
@@ -32,29 +33,29 @@ class LinearArch
     pointer of the location of evaluation, and returns the function
     value.
   */
-  double (*trueFcn)(Controls const &, double const * const);
-  double* featuresCoefs;            //!< Architecture coefficients.
-  double* featuresVals;             //!< Evaluated feature values storages.
-  double* stateSample;              //!< Input variable array.
-  int** refTable;                   //!< Refernce table for total order polynomial.
-  double** ATrans;                  //!< Working transpose of the LHS matrix for regression, altered upon exit from LAPACK.
-  double** LHS;                     //!< Reference LHS matrix for regression.
-  double* B;                        //!< Working RHS vector for regression, altered upon exit from LAPACK.
-  double* RHS;                      //!< Reference RHS vector for regression.
-  double* soln;                     //!< Solution vector for regression.
-  double* singularValues;           //!< Storage for singular values for regression.
-  int lwork;                        //!< Size for work array for regression.
-  double* work;                     //!< Work array for regression.
+  double (*trueFcn)(InputParams const &, double const * const);
+  vector<double> featuresCoefs;     //!< Architecture coefficients.
+  vector<double> featuresVals;      //!< Evaluated feature values storages.
+  vector<double> stateSample;       //!< Input variable array.
+  vector< vector<int> > refTable;   //!< Refernce table for total order polynomial.
+  // double** ATrans;                  //!< Working transpose of the LHS matrix for regression, altered upon exit from LAPACK.
+  // double** LHS;                     //!< Reference LHS matrix for regression.
+  // double* B;                        //!< Working RHS vector for regression, altered upon exit from LAPACK.
+  // double* RHS;                      //!< Reference RHS vector for regression.
+  // double* soln;                     //!< Solution vector for regression.
+  // double* singularValues;           //!< Storage for singular values for regression.
+  // int lwork;                        //!< Size for work array for regression.
+  // double* work;                     //!< Work array for regression.
 
 public:
 
-  /*! \fn LinearArch(Controls const &);
+  /*! \fn LinearArch(InputParams const &);
     
     \brief Constructor of the LinearArch class.
     
-    \param refControls Reference to primary controls.
+    \param algParams Reference to algorithm parameters.
   */
-  LinearArch(Controls const &);
+  LinearArch(InputParams const &);
 
   /*! \fn LinearArch(LinearArch const &);
     
