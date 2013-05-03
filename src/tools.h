@@ -1,6 +1,7 @@
 /*! \file tools.h 
 
   \brief Various tools.
+
 */
 #ifndef _TOOLS_H
 #define _TOOLS_H
@@ -9,39 +10,37 @@
 #include <math.h>
 #include <sstream>
 #include <stdlib.h>
+#include <vector>
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
+#include "gtest/gtest.h"
 
 using namespace std;
 
-/*! \fn void randMultivariateNormal(double** const, int, gsl_rng const
- *, double* const, double* const);
+/*! \fn void randMultivariateNormal(vector< vector<double> > const &,
+  gsl_rng const *, vector<double> &);
   
   \brief Generates a sample of a zero-mean multivariate normal random
   vector from a square-root of the covariance matrix.
   
-  \param sqrtCov Pointer to the square-root of the covariance matrix.
-  \param length Dimension of the random vector.
+  \param sqrtCov Reference to the square-root of the covariance matrix.
   \param generator GSL random number generator.
-  \param indep1DGaussians Temporary storage for independent 1D Gaussians.
-  \param sample Pointer to the sample vector.
+  \param sample Reference to the resulting sample vector.
 */
-void randMultivariateNormal(double** const, int, gsl_rng const *, 
-			    double* const, double* const);
+void randMultivariateNormal(vector< vector<double> > const &, gsl_rng const *, 
+			    vector<double> &);
 
-/*! \fn double normOf1DArray(double const * const, int const, int
-  const);
+/*! \fn double vectorNorm(vector<double> const &, int const);
   
   \brief Computes a norm of a 1D double array.
   
-  \param array 1D double array.
-  \param length Length of the array.
+  \param array Reference to the double vector.
   \param normChoice Choice of norm (0-infinity norm, 1-1 norm, 2-2 norm).
 
-  \return Norm of the 1D array.
+  \return Norm of the vector.
 */
-double normOf1DArray(double const * const, int const, int const);
+double vectorNorm(vector<double> const &, int const);
 
 /*! \fn int nCr(int const, int const);
 
@@ -233,26 +232,25 @@ void solveBandedLinearSystem(int const, int const, int const,
 			     double const * const * const, double* const * const, 
 			     int* const, double* const);
 
-/*! \fn void linearLeastSquares(int const, int const, double * const *
-  const, double* const, double const * const, double* const, int
-  const, double * const);
+/*! \fn void linearLeastSquares(vector< vector<double> > &,
+  vector<double> &, vector<double> &, vector<double> &, int const,
+  vector<double> &);
   
   \brief A wrapper function that solves a banded linear system. DGBSV
   routine from LAPACK is used.
 
-  \param nRows Number of rows for the Vandermonde matrix.
-  \param nCols Number of columns for the Vandermonde matrix.
-  \param ATrans Transpose of the vandermonde matrix (LAPACK-required).
-  \param sOut Array for storing computed singular values. 
-  \param B RHS vector. 
-  \param work Work double array.
+  \param ATrans Reference to the transpose of the vandermonde matrix 
+  (LAPACK-required).
+  \param sOut Reference to the array for storing computed singular values. 
+  \param B Reference to the RHS vector. 
+  \param work Reference to the work double array.
   \param workLength Work double array length.
-  \param soln Solution vector. 
+  \param soln Reference to the solution vector. 
 */
-void linearLeastSquares(int const, int const, double * const * const, 
-			double* const, double * const, double* const, 
-			int const, double * const);
-  
+void linearLeastSquares(vector< vector<double> > &, vector<double> &, 
+			vector<double> &, vector<double> &, int const, 
+			vector<double> &);
+
 /*! \fn void quickSort(T* const, U* const, V** const, int const, int
   const);
 

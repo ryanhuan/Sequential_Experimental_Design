@@ -8,12 +8,14 @@
 #define _LINEARARCH_H
 
 #include <math.h>
+#include <vector>
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 
 #include "inputParams.h"
-//#include "tools.h"
+#include "tools.h"
+#include "structDef.h"
 
 /*! \class LinearArch
 
@@ -22,41 +24,47 @@
   This class contains elements to construct the linear architecture as
   an approximation function (i.e., a linear expansion of basis
   function or features).
+
 */
 class LinearArch
 {
   
-  /* Controls. */
+  /* Parameters. */
   InputParams algParams;            //!< Algorithm parameters.
   gsl_rng_type const * rngType;     //!< GSL random number generator type.
   gsl_rng* generator;               //!< GSL random number generator 1 for noise.
+  bool initialized;                 //!< Flag to indicator whether the class has been initialized. 
   
   /* Linear architecture. */
   /*! \brief Pointer to the original true function to be approximated.
-    
-    The original true function must take the argument of a double
-    pointer of the location of evaluation, and returns the function
-    value.
   */
-  double (*trueFcn)(InputParams const &, double const * const);
+  double (*trueFcn)(InputParams const &, GenericInputs const &, vector<double> const &);
+  GenericInputs trueFcnInputs;      //!< Inputs for the true function. 
   vector<double> featuresCoefs;     //!< Architecture coefficients.
   vector<double> featuresVals;      //!< Evaluated feature values storages.
   vector<double> stateSample;       //!< Input variable array.
   vector< vector<int> > refTable;   //!< Refernce table for total order polynomial.
-  // double** ATrans;                  //!< Working transpose of the LHS matrix for regression, altered upon exit from LAPACK.
-  // double** LHS;                     //!< Reference LHS matrix for regression.
-  // double* B;                        //!< Working RHS vector for regression, altered upon exit from LAPACK.
-  // double* RHS;                      //!< Reference RHS vector for regression.
-  // double* soln;                     //!< Solution vector for regression.
-  // double* singularValues;           //!< Storage for singular values for regression.
-  // int lwork;                        //!< Size for work array for regression.
-  // double* work;                     //!< Work array for regression.
+  vector< vector<double> > ATrans;  //!< Working transpose of the LHS matrix for regression, altered upon exit from LAPACK.
+  vector< vector<double> > LHS;     //!< Reference LHS matrix for regression.
+  vector<double> B;                 //!< Working RHS vector for regression, altered upon exit from LAPACK.
+  vector<double> RHS;               //!< Reference RHS vector for regression.
+  vector<double> soln;              //!< Solution vector for regression.
+  vector<double> singularValues;    //!< Storage for singular values for regression.
+  int lwork;                        //!< Size for work array for regression.
+  vector<double> work;              //!< Work array for regression.
 
 public:
 
+  /*! \fn LinearArch();
+    
+    \brief Default constructor of the LinearArch class. This should
+    only be used if it is followed up with initialize.
+  */
+  LinearArch();
+
   /*! \fn LinearArch(InputParams const &);
     
-    \brief Constructor of the LinearArch class.
+    \brief Constructor of the LinearArch class taking in argument.
     
     \param algParams Reference to algorithm parameters.
   */
@@ -86,6 +94,14 @@ public:
   */
   LinearArch& operator=(LinearArch const &);
 
+  /*! \fn void initialize(InputParams const &);
+    
+    \brief Initializations of the LinearArch class.
+    
+    \param algParams Reference to algorithm parameters.
+  */
+  void initialize(InputParams const &);
+
   /*! \fn void permPolyOrders(int, int const, int &, vector<int> &);
     
     \brief Computes all the permutation of indexes for the i vector
@@ -103,16 +119,16 @@ public:
   */
   void permPolyOrders(int, int const, int &, vector<int> &);
 
-  // /*! \fn void makeCoefs(double (*)(Controls const &, GenericInputs &,
-  //   double const * const), GenericInputs &);
+  /*! \fn void makeCoefs(double (*)(InputParams const &, GenericInputs
+    const &, vector<double> const &), GenericInputs const &);
 
-  //   \brief Computes the linear architecture coefficients.
+    \brief Computes the linear architecture coefficients.
 
-  //   \param trueFcnRef Pointer to the true function. 
-  //   \param trueFcnInputsRef Reference to the true function input struct.
-  // */
-  // void makeCoefs(double (*)(Controls const &, GenericInputs &, 
-  // 			    double const * const), GenericInputs &);
+    \param trueFcnRef Pointer to the true function. 
+    \param trueFcnInputsRef Reference to the true function input struct.
+  */
+  void makeCoefs(double (*)(InputParams const &, GenericInputs const &, 
+			    vector<double> const &), GenericInputs const &);
 
   /*! \fn void evalAllFeatures(vector<double> const &, vector<double>
     &);

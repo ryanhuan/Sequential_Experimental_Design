@@ -20,38 +20,43 @@ int main(int argc, char **argv)
 
   /* Linear architecture initialization. */
   vector<double> tempArchCoefs(algParams.nFeatures, 0.0);
-  vector<LinearArch> arch(algParams.nStages - 1, algParams);
-  // GenericInputs maxExpInputs;
+  vector<LinearArch> arch(algParams.nStages - 1, LinearArch(algParams));
+  GenericInputs maxExpInputs;
   
   /* DP algorithm (backward induction), first construct all the
    * surrogate functions using linear architecture. */
-  for (int k = int(arch.size()) - 1; k > -1; k--)
+  for (unsigned int k = arch.size(); k > 0; k--)
   {
-  //   if (primary.rank == 0)
-  //     cout << "Making TJ_" << k + 1 << ". " << endl;
+    if (algParams.rank == 0)
+      cout << "Making TJ_" << k << ". " << endl;
     
-  //   //!!! for now, we are going to use the exact function for J2, ie
-  //   //!!! no approximation. In future, this would be needed for
-  //   //!!! general, non-Gaussian distributions. Note the first if
-  //   //!!! condition is approximating the MAX EXPECTED J2.
-  //   /* Pass in function pointer to the true function to be
-  //    * approximate. */
-  //   if (k == int(arch.size() - 1))
-  //   {
-  //     /* For when true function is terminal reward. */
-  //     maxExpInputs.futureFcnPtr = evalTerminalRewardFromKm1;
-  //     maxExpInputs.stageFcnPtr = quadraticControlsCost;
-  //     arch[k].makeCoefs(maxExpectation, maxExpInputs);
-  //   }
-  //   else
-  //   {
-  //     /* For when true function is the previous approximation function. */
-  //     maxExpInputs.futureFcnPtr = arch[k+1].evalArchitecture;
-  //     maxExpInputs.stageFcnPtr = quadraticControlsCost;
-  //     arch[k].makeCoefs(maxExpectation, maxExpInputs);
-  //   }
+    //!!! for now, we are going to use the exact function for J2, ie
+    //!!! no approximation. In future, this would be needed for
+    //!!! general, non-Gaussian distributions. Note the first if
+    //!!! condition is approximating the MAX EXPECTED J2.
+    /* Pass in function pointer to the true function to be
+     * approximate. */
+    if (k == arch.size())
+    {
+      /* For when true function is terminal reward. */
+      maxExpInputs.systemEqnPtr = systemEquation;
+      maxExpInputs.stageFcnPtr = stageCost;
+      maxExpInputs.futureFcnPtr = evalTerminalReward;
+      arch[k - 1].makeCoefs(maxExpectation, maxExpInputs);
+    }
+    else
+    {
+      /* For when true function is the previous approximation function. */
+      //!!! this does not work yet, since our pointer is for pointing
+      //!!! to ordinary functions and not class member functions.
 
-    arch[k].exportCoefs(tempArchCoefs);
+      // maxExpInputs.systemEqnPtr = systemEquation;
+      // maxExpInputs.stageFcnPtr = stageCost;
+      // maxExpInputs.futureFcnPtr = arch[k].evalArchitecture;
+      // arch[k - 1].makeCoefs(maxExpectation, maxExpInputs);
+    }
+
+    arch[k - 1].exportCoefs(tempArchCoefs);
 
     for (unsigned int i = 0; i < tempArchCoefs.size(); i++)
       cout << tempArchCoefs[i] << endl;

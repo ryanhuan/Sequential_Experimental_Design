@@ -8,12 +8,12 @@
 
 #include <iostream>
 #include <math.h>
+#include <vector>
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 
-#include "structDef.h"
-#include "tools.h"
+#include "inputParams.h"
 
 using namespace std;
 
@@ -25,8 +25,8 @@ using namespace std;
 class DPCostsInsideExpectation
 {
   
-  /* Controls. */
-  Controls primary;         //!< Controls.
+  /* Parameters. */
+  InputParams algParams;        //!< Algorithm parameters.
 
   /* Dynamic programming. */
   double* stateKp1;         //!< Pointer to the state at stage k+1 (new memory needed).

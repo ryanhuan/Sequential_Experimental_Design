@@ -1,31 +1,37 @@
 /*! \file SARM.h 
 
-  \brief Class and functions concerning the SAA with BFGS algorithm.  
+  \brief Class and functions concerning the stochastic approximation
+  Robbins-Monro algorithm.
+
 */
 #ifndef _SARM_H
 #define _SARM_H
 
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 
-#include "DPCostsInsideExpectation.h"
-#include "structDef.h"
+//#include "DPCostsInsideExpectation.h"
+#include "inputParams.h"
 
 using namespace std;
 
 /*! \class SARM
 
-  \brief Class for the Stochastic Approximation Robins-Monro 
+  \brief Class for the stochastic approximation Robins-Monro 
   algorithm.
+
 */
 class SARM
 {
   
-  /* Controls. */
-  Controls primary;         //!< Controls.
+  /* Parameters. */
+  InputParams algParams;        //!< Algorithm parameters.
+  bool initialized;             //!< Flag to indicator whether the class has been initialized. 
+  bool positionInitialized;     //!< Flag to indicator whether the class has been position initialized. 
   
   /* History storage. */
   /*! \brief Pointer to iteration counter in StochasticSearch class
@@ -37,21 +43,21 @@ class SARM
     class.
   */
   int* nIter;
-  int* storageCtr;          //!< Pointer to storage counter.
-  int* iterHistory;         //!< Pointer to iteration history.
-  double** XHistory;        //!< Pointer to position history.
-  double* valHistory;       //!< Pointer to objective value history.
-  double* gradNormHistory;  //!< Pointer to gradient norm history.
-  bool flagCheckGradientFD; //!< Flag for internal checking gradient against FD at every computation.
-  DPCostsInsideExpectation* DPCosts;//!< Class for DP costs inside the expectation (single sample).
+  int* storageCtr;              //!< Pointer to storage counter.
+  vector<int>* iterHistory;     //!< Pointer to iteration history.
+  vector< vector<double> >* XHistory;//!< Pointer to position history.
+  vector<double>* valHistory;   //!< Pointer to objective value history.
+  vector<double>* gradNormHistory;//!< Pointer to gradient norm history.
+  bool flagCheckGradientFD;     //!< Flag for internal checking gradient against FD at every computation.
+//  DPCostsInsideExpectation* DPCosts;//!< Class for DP costs inside the expectation (single sample).
   
   /* Optimization. */
-  double* XCur;             //!< Current (unnormalized) position.
+  vector<double> XCur;      //!< Current (unnormalized) position.
   double valTemp;           //!< Temporary objective value.
   double valCur;            //!< Current objective value.
-  double* gradTemp;         //!< Temporary (unnormalized) gradient storage.
-  double* gradTemp2;        //!< Temporary (unnormalized) gradient storage 2.
-  double* gradCur;          //!< Current (unnormalized) gradient.
+  vector<double> gradTemp;  //!< Temporary (unnormalized) gradient storage.
+  vector<double> gradTemp2; //!< Temporary (unnormalized) gradient storage 2.
+  vector<double> gradCur;   //!< Current (unnormalized) gradient.
   gsl_rng_type const * rngType; //!< GSL random number generator type.
   gsl_rng* generatorNoise1; //!< GSL random number generator 1 for noise.
   gsl_rng* generatorNoise2; //!< GSL random number generator 2 for noise.
@@ -80,6 +86,12 @@ class SARM
   double SPSAalpha;
   
 public:
+
+  /*! \fn SARM();
+    
+    \brief Default constructor for SARM class.
+  */
+  SARM();
   
   /*! \fn SARM(Controls const &, int* const, int* const, int* const,
     double** const, double* const, double* const);

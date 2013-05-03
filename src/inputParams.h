@@ -14,6 +14,7 @@
 #include "mpi.h"
 
 #include "fileRead.h"
+#include "tools.h"
 
 using namespace std;
 
@@ -45,15 +46,12 @@ public:
   int nControlsDim;             //!< Control space dimension.
   int nDisturbanceDim;          //!< Disturbance space dimension.
   int nInferenceParamsDim;      //!< Inference parameters space dimension. Ensure consistent with nStatesDim.
+  int nSearchDim;               //!< Search space dimension for optimization (same as nControlsDim in this case). Computed. 
+  vector<double> initialState;  //!< Initial state vector. 
   vector<double> controlsLowerBounds;//!< Lower bounds of the control space, assumed box constraint.
   vector<double> controlsUpperBounds;//!< Upper bounds of the control space, assumed box constraint.
+  int disturbanceStructure;     //!< Choice of the disturbance structure. 
   int nStochOptPerState;        //!< Number of repeated stochastic optimization runs at every evaluation of J_k(x_k).
-  // /*! \brief Function pointer to the system equation, assumes independent of stage. */
-  // void (*systemEqnPtr) (InputParams const &, State const &, vector<double> const &,
-  // 			vector<double> const &, State const &);
-  // /*! \brief Function pointer to the stage cost, assumes independent of stage. */
-  // double (*stageCostPtr) (InputParams const &, State const &, vector<double> const &,
-  // 			  vector<double> const &);
   
   /* ADP value function approximation. */
   int featuresChoice;           //!< 1-total order polynomial, 2-Gaussian KL terms.
@@ -62,19 +60,19 @@ public:
   int nRegressionSamples;       //!< Number of regression sample points (coefsConstructionMethod=1). 
   int nFeatures;                //!< Total number of features. Computed.
 
-  // /* Stochastic Optimization. */
-  // int optMethod;            //!< 1-SPSA, 2-ELRS, 3-NMNS, 4-SAA_NCG, 5-SAA_BFGS, 6-SARM.
-  // int maxOptIters;          //!< Maximum number of optimization iterations.
-  // int relXNormTerminateNormChoice;//!< Norm choice for computing relative position change.
-  // double relXNormTerminateTol;  //!< Termination tolerance of position norm change.
-  // int nConsecRelXNormTerminateTol;//!< Number of consecutive iterations hitting relXNormTerminateTol before terminating.
-  // int gradNormChoice;       //!< Gradient norm choice.
-  // int nObjMC;               //! MC sample size of the objective function.
-  // double* XInitial;         //!< Initial position in search space.
-  // bool randomizeXInitial;   //!< Randomize initial position in search space (uniform).
-  // int nFinalObjHighQualityMC;//!< Monte Carlo size of high quality evaluation at the final optimized position. 
-  // bool displayOptProgress;  //!< Flag to display progress for stochastic optimization.
-  // bool displayOptSummary;   //!< Flag to display final summary for stochastic optimization.
+  /* Stochastic Optimization. */
+  int optMethod;                //!< 1-SPSA, 2-ELRS, 3-NMNS, 4-SAA_NCG, 5-SAA_BFGS, 6-SARM.
+  int maxOptIters;              //!< Maximum number of optimization iterations.
+  int relXNormTerminateNormChoice;//!< Norm choice for computing relative position change.
+  double relXNormTerminateTol;  //!< Termination tolerance of position norm change.
+  int nConsecRelXNormTerminateTol;//!< Number of consecutive iterations hitting relXNormTerminateTol before terminating.
+  int normChoice;               //!< Norm choice.
+  int nObjMC;                   //!< MC sample size of the objective function.
+  vector<double> userXInitial;  //!< User input of initial position in search space.
+  bool randomizeXInitial;       //!< Randomize initial position in search space (uniform).
+  int nFinalObjHighQualityMC;   //!< Monte Carlo size of high quality evaluation at the final optimized position. 
+  bool displayOptProgress;      //!< Flag to display progress for stochastic optimization.
+  bool displayOptSummary;       //!< Flag to display final summary for stochastic optimization.
   
   // /* SARM. */
   // bool checkInitialGradient;//!< Flag for checking initial analytic gradient against FD.
@@ -175,25 +173,5 @@ public:
   void addMPIInfo(int const, int const);
   
 };
-
-
-// /*! \struct GenericInputs
-
-//   \brief Struct for general input components. 
-
-//   Note that only shallow copies are used/needed since a single
-//   reference struct is constructed. This struct should only contain
-//   pointers and not actual arrays themselves. 
-// */
-// struct GenericInputs
-// {
-  
-//   /* Function pointers. */
-//   double (*stageFcnPtr) (Controls const &, double const * const, 
-// 			 double const * const, double const * const);
-//   double (*futureFcnPtr) (Controls const &, double const * const, 
-// 			  double const * const, double const * const);
-  
-// };
 
 #endif

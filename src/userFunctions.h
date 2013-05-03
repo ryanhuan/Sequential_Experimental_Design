@@ -1,7 +1,7 @@
 /*! \file userFunctions.h 
   
-  \brief A collection of various functions that can be evaluated for
-  different purposes.  
+  \brief A collection of various functions needed for the algorithm,
+defined by the user.
 */
 #ifndef _USERFUNCTIONS_H
 #define _USERFUNCTIONS_H
@@ -10,43 +10,73 @@
 #include <iomanip>
 #include <math.h>
 #include <stdlib.h>
+#include <vector>
 
-//#include "stochasticSearch.h"
+#include "inputParams.h"
+#include "stochasticSearch.h"
 #include "structDef.h"
-#include "tools.h"
+//#include "tools.h"
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 
 using namespace std;
 
-/*! \fn double evalTerminalReward(Controls const &, double const *
-  const);
+/*! \fn void systemEquation(InputParams const &, vector<double> const
+  &, vector<double> const &, vector<double> const &, vector<double>
+  &);
+  
+  \brief Evaluates the system equation to obtain the next state. 
+  
+  \param algParams Reference to algorithm parameters.
+  \param state Reference to current state.
+  \param control Reference to current control.
+  \param disturbance Reference to current disturbance.
+  \param newState Reference to new state.
+*/
+void systemEquation(InputParams const &, vector<double> const &, 
+		    vector<double> const &, vector<double> const &,
+		    vector<double> &);
+
+/*! \fn double stageCost(InputParams const &, vector<double> const &,
+  vector<double> const &, vector<double> const &);
+  
+  \brief Evaluates the current stage cost.
+  
+  \param algParams Reference to algorithm parameters.
+  \param state Reference to current state.
+  \param control Reference to current control.
+  \param disturbance Reference to current disturbance.
+
+  \return Current stage cost. 
+*/
+double stageCost(InputParams const &, vector<double> const &, 
+		 vector<double> const &, vector<double> const &);
+
+/*! \fn double maxExpectation(InputParams const &, GenericInputs const
+  &, vector<double> const &);
+  
+  \brief Evaluates the current value function.
+  
+  \param algParams Reference to algorithm parameters.
+  \param allInputs Reference to generic input.
+  \param state Reference to current state.
+
+  \return Current value function value. 
+*/
+double maxExpectation(InputParams const &, GenericInputs const &, 
+		      vector<double> const &);
+
+/*! \fn double evalTerminalReward(InputParams const &, vector<double>
+  const &);
   
   \brief Evaluates the terminal reward function.
   
-  \param primary Reference to primary controls.
-  \param state Input final state.
+  \param algParams Reference to algorithm parameters.
+  \param state Reference to state.
   
   \return Value of terminal reward.
 */
-double evalTerminalReward(Controls const &, double const * const);
-
-/*! \fn double evalJk(Controls const &, double const, int const,
-  double const * const, int const * const * const)
-  
-  \brief Evaluates or approximates the J_k function using stochastic
-  optimization at the specified abscissa (transformed to state).
-  
-  \param primary Reference to primary controls.
-  \param abscissas Array of abscissas.
-  \param currentStage The current DP stage.
-  \param coefsJkp1Ref Coefs of the Jkp1 function.
-  \param refTableJkp1Ref Reference table of the Jkp1 function.
-  
-  \return Value of J_k.
-*/
-double evalJk(Controls const &, double const * const, int const, 
-	      double const * const, int const * const * const);
+double evalTerminalReward(InputParams const &, vector<double> const &);
 
 #endif

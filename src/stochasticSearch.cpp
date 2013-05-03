@@ -4,37 +4,54 @@
  * StochasticSearch
  *********************************************************************/
 
-StochasticSearch::StochasticSearch(Controls const &refControls)
+StochasticSearch::StochasticSearch()
+{
+  initialized = 0;
+}
+
+StochasticSearch::StochasticSearch(InputParams const &algParamsRef)
+{
+  initialize(algParamsRef);
+}
+
+StochasticSearch::~StochasticSearch()
 {
   
-  /* Load controls. */
-  primary = refControls;
+  /* Free memory. */
+  if (initialized)
+  {
+    gsl_rng_free(generatorNoiseForHighQualityMC);
+  }
+  
+}
+
+void StochasticSearch::initialize(InputParams const &algParamsRef)
+{
+
+  /* Load input parameters. */
+  algParams = algParamsRef;
   
   /* Allocate memory. */
-  nIter = new int[1];
-  storageCtr = new int[1];
+  iterHistory.assign(algParams.maxOptIters + 1, 0);
+  XHistory.assign(algParams.maxOptIters + 1, vector<double>(algParams.nSearchDim, 0.0));
+  valHistory.assign(algParams.maxOptIters + 1, 0.0);
+  XInitial.assign(algParams.nSearchDim, 0.0);
 
-  iterHistory = new int[primary.maxOptIters + 1];
-  XHistory = new double*[primary.maxOptIters + 1];
-  XHistory[0] = new double[(primary.maxOptIters + 1) * primary.nControlsDim];
-  for (int i = 1; i < primary.maxOptIters + 1; i++)
-    XHistory[i] = XHistory[i - 1] + primary.nControlsDim;
-  valHistory = new double[primary.maxOptIters + 1];
-
-  DPCostsForHighQualityMC = new DPCostsInsideExpectation(refControls);
+  //!!!
+  // DPCostsForHighQualityMC = new DPCostsInsideExpectation(refControls);
 
   /* Initialize specific search algorithm class. */
-  switch (primary.optMethod)
+  switch (algParams.optMethod)
   {
   case 6:
     /* SARM. */
-    gradNormHistory = new double[primary.maxOptIters + 1];
-    robbinsMonro = new SARM(primary, nIter, storageCtr, iterHistory, XHistory,
-    			    valHistory, gradNormHistory);
+    gradNormHistory.assign(algParams.maxOptIters + 1, 0.0);
+    // robbinsMonro.initialize(primary, nIter, storageCtr, iterHistory, XHistory,
+    // 			    valHistory, gradNormHistory);
     break;
     
   default:
-    cout << "Error: Optimization method " << primary.optMethod
+    cout << "Error: Optimization method " << algParams.optMethod
 	 << " not available." << endl;
     exit(1);
   }
@@ -48,35 +65,7 @@ StochasticSearch::StochasticSearch(Controls const &refControls)
   generatorNoiseForHighQualityMC = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
 
-}
-
-StochasticSearch::~StochasticSearch()
-{
-  
-  /* Free memory. */
-  delete [] nIter;
-  delete [] storageCtr;
-
-  delete [] iterHistory;
-  delete [] XHistory[0];
-  delete [] XHistory;
-  delete [] valHistory;
-
-  delete DPCostsForHighQualityMC;
-
-  switch (primary.optMethod)
-  {
-  case 6:
-    delete robbinsMonro;
-    delete [] gradNormHistory;
-    break;
-  default:
-    cout << "Error: Optimization method " << primary.optMethod
-	 << " not available." << endl;
-    exit(1);
-  }
-
-  gsl_rng_free(generatorNoiseForHighQualityMC);
+  initialized = 1;
 
 }
 
@@ -84,44 +73,50 @@ void StochasticSearch::makeLabels()
 {
   
   /* Construct progress and text file label. */
-  if (primary.optMethod == 6)
+  if (algParams.optMethod == 6)
     /* SARM. */
     dataLabels = string("% Iter,    Gradient Norm,       Coordinates [")
-      + num2string<int>(primary.nControlsDim) + string(" columns]");
+      + num2string<int>(algParams.nSearchDim) + string(" columns]");
   else
   {
-    cout << "Error: Optimization method " << primary.optMethod
+    cout << "Error: Optimization method " << algParams.optMethod
 	 << " not available." << endl;
     exit(1);
   }
   
 }
 
-void StochasticSearch::initialPosition(double (*innerFcn)(Controls const &, 
-							  double const * const), 
-				       double const * const state)
+void StochasticSearch::initializePosition(vector<double> const &XInitialRef)
 {
+
+  /* Initialize if not initialized. */
+  if (!initialized)
+  {
+    cout << "Attempting to use StochasticSearch without initializing, please check code. " 
+	 << endl;
+    exit(1);
+  }
   
-  /* Some storage initializations. */
-  nIter[0] = 0;
-  storageCtr[0] = 0;
+  /* Initializations. */
+  for (unsigned int i = 0; i < XInitial.size(); i++)
+    XInitial[i] = XInitialRef[i];
+  nIter = 0;
+  storageCtr = 0;
   nConsecRelXNorm = 0;
   isLocalMin = 0;  
-  
-  /* More initializations. */
-  iterHistory[0] = 0;
+  iterHistory.assign(iterHistory.size(), 0.0);
   
   /* Call additional initialization functions that are specific to the
    * selected algorithm. For example, gradient estimate if a
    * gradient-based algorithm is used. */
-  switch (primary.optMethod)
+  switch (algParams.optMethod)
   {
   case 6:
     /* SARM. */
-    robbinsMonro -> initialPosition(innerFcn, state);
+//    robbinsMonro -> initialPosition(innerFcn);
     break;
   default:
-    cout << "Error: Optimization method " << primary.optMethod
+    cout << "Error: Optimization method " << algParams.optMethod
 	 << " not available." << endl;
     exit(1);
   }
@@ -131,91 +126,131 @@ void StochasticSearch::initialPosition(double (*innerFcn)(Controls const &,
   cout.precision(16);
   
   /* Display initial conditions. */
-  if (primary.displayOptProgress)
+  if (algParams.displayOptProgress)
   {
     cout << dataLabels << endl;
-    cout << setw(4) << iterHistory[storageCtr[0]] << "  ";
-    cout << setw(23) << gradNormHistory[storageCtr[0]] << "  ";
-    for (int i = 0; i < primary.nControlsDim; i++)
-      cout << setw(23) << XHistory[storageCtr[0]][i] << "  ";
+    cout << setw(4) << iterHistory[storageCtr] << "  ";
+    cout << setw(23) << gradNormHistory[storageCtr] << "  ";
+    for (int i = 0; i < algParams.nSearchDim; i++)
+      cout << setw(23) << XHistory[storageCtr][i] << "  ";
     cout << endl;
   }
+
+  positionInitialized = 1;
   
 }
 
-void StochasticSearch::search(double (*innerFcn)(Controls const &, 
-						 double const * const), 
-			      double const * const state)
+void StochasticSearch::search(vector<double> const &state, GenericInputs allInputs)
 {
 
-  // /* Proceed only if at least 1 iteration is requested. */
-  // if (primary.maxOptIters > 0)
-  // {
+  if (!positionInitialized)
+  {
+    cout << "Attempting to use StochasticSearch without initializing, please check code. " 
+	 << endl;
+    exit(1);
+  }
 
-  //   /* Initializations. */
-  //   previousXNorm = normOf1DArray(XHistory[0], primary.nControlsDim, 
-  // 				  primary.relXNormTerminateNormChoice);
+//   // /* Proceed only if at least 1 iteration is requested. */
+//   // if (primary.maxOptIters > 0)
+//   // {
+
+//   //   /* Initializations. */
+//   //   previousXNorm = normOf1DArray(XHistory[0], primary.nSearchDim, 
+//   // 				  primary.relXNormTerminateNormChoice);
     
-  //   do
-  //   {
+//   //   do
+//   //   {
       
-  //     /* If the user wants to store and display progress every n
-  //      * iterations, then a for-loop should be placed inside the
-  //      * switch statement, wrapping the iterations. */
-  //     switch (primary.optMethod)
-  //     {
-  //     case 6:
-  // 	/* SARM. */
-  // 	robbinsMonro -> iterateOnce(coefsJkp1Ref, refTableJkp1Ref, stateKRef);
-  // 	break;
-  //     default:
-  // 	cout << "Error: Optimization method " << primary.optMethod
-  // 	     << " not available." << endl;
-  // 	exit(1);
-  //     }
+//   //     /* If the user wants to store and display progress every n
+//   //      * iterations, then a for-loop should be placed inside the
+//   //      * switch statement, wrapping the iterations. */
+//   //     switch (primary.optMethod)
+//   //     {
+//   //     case 6:
+//   // 	/* SARM. */
+//   // 	robbinsMonro -> iterateOnce(coefsJkp1Ref, refTableJkp1Ref, stateKRef);
+//   // 	break;
+//   //     default:
+//   // 	cout << "Error: Optimization method " << primary.optMethod
+//   // 	     << " not available." << endl;
+//   // 	exit(1);
+//   //     }
 
-  //     /* Display progress. If local minimum is reached, the next point
-  //      * is not computed and thus should not be displayed (it would
-  //      * display gibberish). */
-  //     if (primary.displayOptProgress && !isLocalMin)
-  //     {
-  // 	cout << setw(4) << iterHistory[storageCtr[0]] << "  ";
-  // 	cout << setw(23) << gradNormHistory[storageCtr[0]] << "  ";
-  // 	for (int i = 0; i < primary.nControlsDim; i++)
-  // 	  cout << setw(23) << XHistory[storageCtr[0]][i] << "  ";
-  // 	cout << endl;
-  //     }
+//   //     /* Display progress. If local minimum is reached, the next point
+//   //      * is not computed and thus should not be displayed (it would
+//   //      * display gibberish). */
+//   //     if (primary.displayOptProgress && !isLocalMin)
+//   //     {
+//   // 	cout << setw(4) << iterHistory[storageCtr[0]] << "  ";
+//   // 	cout << setw(23) << gradNormHistory[storageCtr[0]] << "  ";
+//   // 	for (int i = 0; i < primary.nSearchDim; i++)
+//   // 	  cout << setw(23) << XHistory[storageCtr[0]][i] << "  ";
+//   // 	cout << endl;
+//   //     }
       
-  //     /* If termination due to reaching local minimum, summary should
-  //      * be the last computed point (this termination occurs before
-  //      * the next iteration is computed). */
-  //     if (isLocalMin)
-  //     {
-  // 	storageCtr[0]--;
-  // 	terminationCondition = 8;
-  //     }
-  //     else
-  // 	/* Check terminating conditions. */
-  // 	terminationCondition = checkTermination();
+//   //     /* If termination due to reaching local minimum, summary should
+//   //      * be the last computed point (this termination occurs before
+//   //      * the next iteration is computed). */
+//   //     if (isLocalMin)
+//   //     {
+//   // 	storageCtr[0]--;
+//   // 	terminationCondition = 8;
+//   //     }
+//   //     else
+//   // 	/* Check terminating conditions. */
+//   // 	terminationCondition = checkTermination();
       
-  //   }while(terminationCondition == 0);
+//   //   }while(terminationCondition == 0);
 
-  // }
+//   // }
 
   /* Perform high quality Monte Carlo evaluation at the final
    * position. Note we still take the negative of the DPCosts to be
    * consistent with what we did in the optimization algorithm due to
    * minimization implementation of the algorithm. */
-
-  gsl_rng_set(generatorNoiseForHighQualityMC, rand() + primary.rank);
+  
+  gsl_rng_set(generatorNoiseForHighQualityMC, rand() + algParams.rank);
   finalObjHighQualityMC = 0.0;
-  for (int i = 0; i < primary.nFinalObjHighQualityMC; i++)
-    finalObjHighQualityMC += -DPCostsForHighQualityMC -> 
-      sampleOnce(innerFcn, state, primary.XInitial, generatorNoiseForHighQualityMC);
-  finalObjHighQualityMC /= double(primary.nFinalObjHighQualityMC);
+
+  for (int i = 0; i < algParams.nFinalObjHighQualityMC; i++)
+  {
+  //!!! here is just a temporary code for evaluating inside the
+  //!!! expectation. If we use actual stochastic optimization we will
+  //!!! need to use DPCostsInsideExpectation class.
+  
+  /* Set noise standard deviation. */
+  vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
+  //!!! constant standard deviation for now. 
+  for (unsigned int i = 0; i < noiseStdDev.size(); i++)
+    noiseStdDev[i] = 1.0;
+
+  /* Generate disturbanceK. */
+  vector<double> thetaSample(algParams.nInferenceParamsDim, 0.0);
+  for (unsigned int i = 0; i < thetaSample.size(); i++)
+  {
+    thetaSample[i] = state[0] 
+      + sqrt(state[1]) * gsl_ran_gaussian(generatorNoiseForHighQualityMC, 1.0);
+  }
+
+  /* Evaluate forward model to obtain output. */
+  /* F = m * g + e. */
+  vector<double> disturbance(algParams.nDisturbanceDim, 0.0);
+  disturbance[0] = XInitial[0] * thetaSample[0] + 
+    noiseStdDev[0] * gsl_ran_gaussian(generatorNoiseForHighQualityMC, 1.0);
+
+  /* Evaluate system equation to compute state at stage k+1. */
+  vector<double> newState(algParams.nStatesDim, 0.0);
+  allInputs.systemEqnPtr(algParams, state, XInitial, disturbance, newState);
+
+  /* Evaluate J_{k+1}. */
+  finalObjHighQualityMC += -(allInputs.futureFcnPtr(algParams, newState)
+			     - allInputs.stageFcnPtr(algParams, state, 
+						      XInitial, disturbance));
+  }  
+  finalObjHighQualityMC /= double(algParams.nFinalObjHighQualityMC);
   
   /* Display summary. */
-  if (primary.displayOptSummary)
+  if (algParams.displayOptSummary)
     displaySummary();
   
 }
@@ -235,27 +270,26 @@ int StochasticSearch::checkTermination()
    * history) is not representative of convergence. It could remain
    * unchanged between iterations even though the simplex has evolved
    * substantially. */
-  curXNorm = normOf1DArray(XHistory[storageCtr[0]], primary.nControlsDim,
-			   primary.relXNormTerminateNormChoice);
-  if (fabs(curXNorm - previousXNorm) < primary.relXNormTerminateTol)
+  curXNorm = vectorNorm(XHistory[storageCtr], algParams.normChoice);
+  if (fabs(curXNorm - previousXNorm) < algParams.relXNormTerminateTol)
     nConsecRelXNorm++;
   else
     nConsecRelXNorm = 0;
   previousXNorm = curXNorm;
   
   /* Determine the conditions. */
-  switch (primary.optMethod)
+  switch (algParams.optMethod)
   {
   case 6:
     /* SARM. */
-    if (nIter[0] >= primary.maxOptIters)
+    if (nIter >= algParams.maxOptIters)
       terminationCondition = 1;
-    else if (nConsecRelXNorm >= primary.nConsecRelXNormTerminateTol)
+    else if (nConsecRelXNorm >= algParams.nConsecRelXNormTerminateTol)
       terminationCondition = 4;
     break;
 
   default:
-    cout << "Error: Optimization method " << primary.optMethod
+    cout << "Error: Optimization method " << algParams.optMethod
 	 << " not available." << endl;
     exit(1);
   }
@@ -276,12 +310,12 @@ void StochasticSearch::displaySummary()
   
   cout << endl
        << terminationLabel << endl
-       << "% Total optimization iterations = " << iterHistory[storageCtr[0]] << endl;
-  cout << "% Final gradient norm           = " << setw(23) << gradNormHistory[storageCtr[0]] << endl;
+       << "% Total optimization iterations = " << iterHistory[storageCtr] << endl;
+  cout << "% Final gradient norm           = " << setw(23) << gradNormHistory[storageCtr] << endl;
   
   cout << "% Final coordinates: ";
-  for (int i = 0; i < primary.nControlsDim; i++)
-    cout << "% " << setw(23) << XHistory[storageCtr[0]][i];
+  for (unsigned int i = 0; i < XHistory[0].size(); i++)
+    cout << "% " << setw(23) << XHistory[storageCtr][i];
   cout << endl;
 
 }
@@ -291,10 +325,10 @@ double StochasticSearch::exportFinalObjHighQualityMC()
   return finalObjHighQualityMC;
 }
 
-void StochasticSearch::exportFinalPosition(double * const finalXExternal)
+void StochasticSearch::exportFinalPosition(vector<double> &finalXExternal)
 {
-  for (int i = 0; i < primary.nControlsDim; i++)
-    finalXExternal[i] = XHistory[storageCtr[0]][i];
+  for (unsigned int i = 0; i < XHistory[0].size(); i++)
+    finalXExternal[i] = XHistory[storageCtr][i];
 }
 
 void StochasticSearch::makeTerminationLabel()

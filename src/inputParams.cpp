@@ -33,11 +33,12 @@ InputParams::InputParams(InputParams const &other)
   nControlsDim = other.nControlsDim;
   nDisturbanceDim = other.nDisturbanceDim;
   nInferenceParamsDim = other.nInferenceParamsDim;
+  nSearchDim = other.nSearchDim;
+  initialState = other.initialState;
   controlsLowerBounds = other.controlsLowerBounds;
   controlsUpperBounds = other.controlsUpperBounds;
+  disturbanceStructure = other.disturbanceStructure;
   nStochOptPerState = other.nStochOptPerState;
-  // systemEqnPtr = other.systemEqnPtr;
-  // stageCostPtr = other.stageCostPtr;
   
   /* ADP value function approximation. */
   featuresChoice = other.featuresChoice;
@@ -46,19 +47,19 @@ InputParams::InputParams(InputParams const &other)
   nRegressionSamples = other.nRegressionSamples;
   nFeatures = other.nFeatures;
   
-  // /* Stochastic Optimization. */
-  //  optMethod = 1;
-  //  maxOptIters = 0;
-  //  relXNormTerminateNormChoice = 2;
-  //  relXNormTerminateTol = 0.0;
-  //  nConsecRelXNormTerminateTol = 1;
-  //  gradNormChoice = 2;
-  //  nObjMC = 1;
-  //  XInitial = NULL;
-  //  randomizeXInitial = 0;
-  //  nFinalObjHighQualityMC = 1;
-  //  displayOptProgress = 1;
-  //  displayOptSummary = 1;
+  /* Stochastic Optimization. */
+   optMethod = other.optMethod;
+   maxOptIters = other.maxOptIters;
+   relXNormTerminateNormChoice = other.relXNormTerminateNormChoice;
+   relXNormTerminateTol = other.relXNormTerminateTol;
+   nConsecRelXNormTerminateTol = other.nConsecRelXNormTerminateTol;
+   normChoice = other.normChoice;
+   nObjMC = other.nObjMC;
+   userXInitial = other.userXInitial;
+   randomizeXInitial = other.randomizeXInitial;
+   nFinalObjHighQualityMC = other.nFinalObjHighQualityMC;
+   displayOptProgress = other.displayOptProgress;
+   displayOptSummary = other.displayOptSummary;
   
   // /* SARM. */
   //  checkInitialGradient = 0;
@@ -75,10 +76,6 @@ InputParams::InputParams(InputParams const &other)
 
 InputParams::~InputParams()
 {
-
-  /* Free memory. */
-  // delete []  XInitial;
-  
 }
 
 InputParams& InputParams::operator=(InputParams const &rhs)
@@ -102,11 +99,12 @@ InputParams& InputParams::operator=(InputParams const &rhs)
     nControlsDim = rhs.nControlsDim;
     nDisturbanceDim = rhs.nDisturbanceDim;
     nInferenceParamsDim = rhs.nInferenceParamsDim;
+    nSearchDim = rhs.nSearchDim;
+    initialState = rhs.initialState;
     controlsLowerBounds = rhs.controlsLowerBounds;
     controlsUpperBounds = rhs.controlsUpperBounds;
+    disturbanceStructure = rhs.disturbanceStructure;
     nStochOptPerState = rhs.nStochOptPerState;
-    // systemEqnPtr = rhs.systemEqnPtr;
-    // stageCostPtr = rhs.stageCostPtr;
   
     /* ADP value function approximation. */
     featuresChoice = rhs.featuresChoice;
@@ -115,19 +113,19 @@ InputParams& InputParams::operator=(InputParams const &rhs)
     nRegressionSamples = rhs.nRegressionSamples;
     nFeatures = rhs.nFeatures;
     
-    // /* Stochastic Optimization. */
-    //  optMethod = 1;
-    //  maxOptIters = 0;
-    //  relXNormTerminateNormChoice = 2;
-    //  relXNormTerminateTol = 0.0;
-    //  nConsecRelXNormTerminateTol = 1;
-    //  gradNormChoice = 2;
-    //  nObjMC = 1;
-    //  XInitial = NULL;
-    //  randomizeXInitial = 0;
-    //  nFinalObjHighQualityMC = 1;
-    //  displayOptProgress = 1;
-    //  displayOptSummary = 1;
+    /* Stochastic Optimization. */
+    optMethod = rhs.optMethod;
+    maxOptIters = rhs.maxOptIters;
+    relXNormTerminateNormChoice = rhs.relXNormTerminateNormChoice;
+    relXNormTerminateTol = rhs.relXNormTerminateTol;
+    nConsecRelXNormTerminateTol = rhs.nConsecRelXNormTerminateTol;
+    normChoice = rhs.normChoice;
+    nObjMC = rhs.nObjMC;
+    userXInitial = rhs.userXInitial;
+    randomizeXInitial = rhs.randomizeXInitial;
+    nFinalObjHighQualityMC = rhs.nFinalObjHighQualityMC;
+    displayOptProgress = rhs.displayOptProgress;
+    displayOptSummary = rhs.displayOptSummary;
     
     // /* SARM. */
     //  checkInitialGradient = 0;
@@ -165,10 +163,9 @@ void InputParams::setDefaultValues()
   nControlsDim = -1;
   nDisturbanceDim = -1;
   nInferenceParamsDim = -1;
+  nSearchDim = -1;
+  disturbanceStructure = 0;
   nStochOptPerState = 1;
-  //!!! check
-  // systemEqnPtr = systemEquation;
-  // stageCostPtr = stageCost;
   
   /* ADP value function approximation. */
   featuresChoice = 1;
@@ -177,19 +174,18 @@ void InputParams::setDefaultValues()
   nRegressionSamples = 1;
   nFeatures = 1;
   
-  // /* Stochastic Optimization. */
-  //  optMethod = 1;
-  //  maxOptIters = 0;
-  //  relXNormTerminateNormChoice = 2;
-  //  relXNormTerminateTol = 0.0;
-  //  nConsecRelXNormTerminateTol = 1;
-  //  gradNormChoice = 2;
-  //  nObjMC = 1;
-  //  XInitial = NULL;
-  //  randomizeXInitial = 0;
-  //  nFinalObjHighQualityMC = 1;
-  //  displayOptProgress = 1;
-  //  displayOptSummary = 1;
+  /* Stochastic Optimization. */
+   optMethod = 1;
+   maxOptIters = 0;
+   relXNormTerminateNormChoice = 2;
+   relXNormTerminateTol = 0.0;
+   nConsecRelXNormTerminateTol = 1;
+   normChoice = 2;
+   nObjMC = 1;
+   randomizeXInitial = 0;
+   nFinalObjHighQualityMC = 1;
+   displayOptProgress = 1;
+   displayOptSummary = 1;
   
   // /* SARM. */
   //  checkInitialGradient = 0;
@@ -271,9 +267,7 @@ void InputParams::readInputParamsFile(string const fName)
       readScalarAsString(val, data, pos);
       nControlsDim = atoi(val);
 
-      controlsLowerBounds.assign(nControlsDim, 0.0);
-      controlsUpperBounds.assign(nControlsDim, 0.0);
-//      XInitial = new double[ nControlsDim];
+      nSearchDim = nControlsDim;
     }
     else if (strcmp(name, "nDisturbanceDim") == 0)
     {
@@ -285,11 +279,28 @@ void InputParams::readInputParamsFile(string const fName)
       readScalarAsString(val, data, pos);
       nInferenceParamsDim = atoi(val);
     }
+    else if (strcmp(name, "initialState") == 0)
+    {
+      /* This must come after reading nControlsDim. */
+      if (nStatesDim > 0)
+      {
+	initialState.assign(nStatesDim, 0.0);
+	readVector<double>(initialState, DOUBLE_TYPE, data, pos);
+      }
+      else
+      {
+	cout << "Error: nStatesDim must be specified before initialState." << endl;
+	exit(1);
+      }
+    }
     else if (strcmp(name, "controlsLowerBounds") == 0)
     {
       /* This must come after reading nControlsDim. */
       if (nControlsDim > 0)
+      {
+	controlsLowerBounds.assign(nControlsDim, 0.0);
 	readVector<double>(controlsLowerBounds, DOUBLE_TYPE, data, pos);
+      }
       else
       {
 	cout << "Error: nControlsDim must be specified before controlsLeftBound." << endl;
@@ -300,12 +311,20 @@ void InputParams::readInputParamsFile(string const fName)
     {
       /* This must come after reading nControlsDim. */
       if (nControlsDim > 0)
+      {
+	controlsUpperBounds.assign(nControlsDim, 0.0);
 	readVector<double>(controlsUpperBounds, DOUBLE_TYPE, data, pos);
+      }
       else
       {
 	cout << "Error: nControlsDim must be specified before controlsRightBound." << endl;
 	exit(1);
       }
+    }
+    else if (strcmp(name, "disturbanceStructure") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      disturbanceStructure = atoi(val);
     }
     else if (strcmp(name, "nStochOptPerState") == 0)
     {
@@ -335,73 +354,75 @@ void InputParams::readInputParamsFile(string const fName)
       nRegressionSamples = atoi(val);
     }
     
-    // /* Stochastic Optimization. */
-    // else if (strcmp(name, "optMethod") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    optMethod = atoi(val);
-    // }
-    // else if (strcmp(name, "maxOptIters") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    maxOptIters = atoi(val);
-    // }
-    // else if (strcmp(name, "relXNormTerminateNormChoice") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    relXNormTerminateNormChoice = atoi(val);
-    // }
-    // else if (strcmp(name, "relXNormTerminateTol") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    relXNormTerminateTol = atof(val);
-    // }
-    // else if (strcmp(name, "nConsecRelXNormTerminateTol") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    nConsecRelXNormTerminateTol = atoi(val);
-    // }
-    // else if (strcmp(name, "gradNormChoice") == 0){
-    //   readScalarAsString(val, data, pos);
-    //    gradNormChoice = atoi(val);
-    // }
-    // else if (strcmp(name, "nObjMC") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    nObjMC = atoi(val);
-    // }
-    // else if (strcmp(name, "XInitial") == 0)
-    // {
-    //   /* This must come after reading nDim. */
-    //   if ( nControlsDim > 0)
-    // 	readVector<double>( XInitial, DOUBLE_TYPE,
-    // 			    nControlsDim, data, pos);
-    //   else
-    //   {
-    // 	cout << "Error: nControlsDim must be specified before XInitial." << endl;
-    // 	exit(1);
-    //   }
-    // }
-    // else if (strcmp(name, "nFinalObjHighQualityMC") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    nFinalObjHighQualityMC = atoi(val);
-    // }
-    // else if (strcmp(name, "randomizeXInitial") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    randomizeXInitial = atoi(val);
-    // }
-    // else if (strcmp(name, "displayOptProgress") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    displayOptProgress = atoi(val);
-    // }
-    // else if (strcmp(name, "displayOptSummary") == 0)
-    // {
-    //   readScalarAsString(val, data, pos);
-    //    displayOptSummary = atoi(val);
-    // }
+    /* Stochastic Optimization. */
+    else if (strcmp(name, "optMethod") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      optMethod = atoi(val);
+    }
+    else if (strcmp(name, "maxOptIters") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      maxOptIters = atoi(val);
+    }
+    else if (strcmp(name, "relXNormTerminateNormChoice") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      relXNormTerminateNormChoice = atoi(val);
+    }
+    else if (strcmp(name, "relXNormTerminateTol") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      relXNormTerminateTol = atof(val);
+    }
+    else if (strcmp(name, "nConsecRelXNormTerminateTol") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      nConsecRelXNormTerminateTol = atoi(val);
+    }
+    else if (strcmp(name, "normChoice") == 0){
+      readScalarAsString(val, data, pos);
+      normChoice = atoi(val);
+    }
+    else if (strcmp(name, "nObjMC") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      nObjMC = atoi(val);
+    }
+    else if (strcmp(name, "userXInitial") == 0)
+    {
+      /* This must come after assigning nSearchDim. */
+      if (nSearchDim > 0)
+      {
+	userXInitial.assign(nSearchDim, 0.0);
+	readVector<double>(userXInitial, DOUBLE_TYPE, data, pos);
+      }
+      else
+      {
+    	cout << "Error: nSearchDim must be specified before userXInitial." << endl;
+    	exit(1);
+      }
+    }
+    else if (strcmp(name, "randomizeXInitial") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      randomizeXInitial = atoi(val);
+    }
+    else if (strcmp(name, "nFinalObjHighQualityMC") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      nFinalObjHighQualityMC = atoi(val);
+    }
+    else if (strcmp(name, "displayOptProgress") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      displayOptProgress = atoi(val);
+    }
+    else if (strcmp(name, "displayOptSummary") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      displayOptSummary = atoi(val);
+    }
     
     // /* SARM. */
     // else if (strcmp(name, "checkInitialGradient") == 0)
@@ -465,8 +486,7 @@ void InputParams::readInputParamsFile(string const fName)
   {
   case 1:
     /* Total order polynomial. */
-    //!!!
-    // nFeatures = nCr( pOrder +  nStatesDim,  pOrder);
+    nFeatures = nCr(pOrder + nStatesDim, pOrder);
     break;
     
   case 2:
