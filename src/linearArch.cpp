@@ -357,6 +357,27 @@ void LinearArch::exportCoefs(vector<double> &coefsExternal)
   
 }
 
+void LinearArch::writeCoefsToFile(string const fName)
+{
+  
+  /* Open file. */
+  ofstream f;
+  
+  /* Write as text file. */
+  f.open(fName.c_str());
+  
+  /* Set output format. */
+  f.setf(ios::scientific,ios::floatfield);
+  f.precision(16);
+  
+  for (unsigned int i = 0; i < featuresCoefs.size(); i++)
+    f << featuresCoefs[i] << endl;
+  
+  /* Close file. */
+  f.close();
+  
+}
+
 
 
 /*********************************************************************

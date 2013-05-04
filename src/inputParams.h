@@ -20,7 +20,7 @@ using namespace std;
 
 /*! \class InputParams
 
-  \brief Struct for algorithm input parameters.  
+  \brief Class for algorithm input parameters.  
 
   This class stores the input and control parameters for this
   algorithm. All members are public. All copies will be by value since

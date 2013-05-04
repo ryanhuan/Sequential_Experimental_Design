@@ -22,6 +22,11 @@ int main(int argc, char **argv)
   vector<double> tempArchCoefs(algParams.nFeatures, 0.0);
   vector<LinearArch> arch(algParams.nStages - 1, LinearArch(algParams));
   GenericInputs maxExpInputs;
+  string fName;
+
+  //!!! build linear arch vs. reading from file.
+  // if (algParams.simulateTrajectories)
+  // {
   
   /* DP algorithm (backward induction), first construct all the
    * surrogate functions using linear architecture. */
@@ -56,10 +61,14 @@ int main(int argc, char **argv)
       // arch[k - 1].makeCoefs(maxExpectation, maxExpInputs);
     }
 
+    /* Retrieve and output coefficients. */
     arch[k - 1].exportCoefs(tempArchCoefs);
+    // for (unsigned int i = 0; i < tempArchCoefs.size(); i++)
+    //   cout << tempArchCoefs[i] << endl;
 
-    for (unsigned int i = 0; i < tempArchCoefs.size(); i++)
-      cout << tempArchCoefs[i] << endl;
+    /* Write coefficients to file. */
+    fName = string("TJ_") + num2string<int>(k) + string("_coefs.dat");
+    arch[k - 1].writeCoefsToFile(fName);    
   }
 
   /* Finalize MPI. */

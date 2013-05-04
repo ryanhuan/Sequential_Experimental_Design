@@ -1,6 +1,7 @@
 /*! \file fileWrite.h 
 
   \brief File writing capabilities.
+
 */
 #ifndef _FILEWRITE_H
 #define _FILEWRITE_H

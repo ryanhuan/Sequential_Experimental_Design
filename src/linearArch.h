@@ -7,7 +7,11 @@
 #ifndef _LINEARARCH_H
 #define _LINEARARCH_H
 
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <math.h>
+#include <string>
 #include <vector>
 
 #include <gsl/gsl_randist.h>
@@ -163,6 +167,14 @@ public:
     \param coefsExternal External coefs storage vector.
   */
   void exportCoefs(vector<double> &);
+
+  /*! \fn void writeCoefsToFile(string const);
+    
+    \brief Write the coefs to file.
+    
+    \param fName File name in string form.
+  */
+  void writeCoefsToFile(string const);
 
 };
 
