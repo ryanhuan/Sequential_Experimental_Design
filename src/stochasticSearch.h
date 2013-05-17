@@ -15,9 +15,11 @@
 #include <gsl/gsl_rng.h>
 
 #include "inputParams.h"
+#include "linearArch.h"
 //#include "SARM.h"
 #include "structDef.h"
 #include "tools.h"
+#include "userFunctions.h"
 
 using namespace std;
 

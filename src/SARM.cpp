@@ -38,7 +38,10 @@ SARM::SARM(Controls const &refControls, int* const nIterRef,
   generatorNoise2 = gsl_rng_alloc(rngType);
   generatorNoiseFDCheck = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
-  
+  gsl_rng_set(generatorNoise1, rand() + algParams.rank);
+  gsl_rng_set(generatorNoise2, rand() + algParams.rank);
+  gsl_rng_set(generatorNoiseFDCheck, rand() + algParams.rank);
+
 }
 
 SARM::~SARM()

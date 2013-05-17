@@ -15,12 +15,49 @@ defined by the user.
 #include "inputParams.h"
 #include "stochasticSearch.h"
 #include "structDef.h"
-//#include "tools.h"
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 
 using namespace std;
+
+/*! \fn void setNoiseStdDev(InputParams const &, vector<double> &);
+  
+  \brief Computes the Gaussian noise standard deviation.
+  
+  \param algParams Reference to algorithm parameters.
+  \param noiseStdDev Reference to noise standard deviation.
+*/
+void setNoiseStdDev(InputParams const &, vector<double> &);
+
+/*! \fn void forwardModel(InputParams const &, vector<double> const &,
+  vector<double> const &, vector<double> const &, vector<double> &);
+  
+  \brief Evaluates the forward model.
+  
+  \param algParams Reference to algorithm parameters.
+  \param theta Reference to model parameters.
+  \param state Reference to current state.
+  \param control Reference to current control.
+  \param modelOutputs Reference to forward model outputs.
+*/
+void forwardModel(InputParams const &, vector<double> const &, 
+		  vector<double> const &, vector<double> const &, 
+		  vector<double> &);
+
+/*! \fn void generateDisturbance(InputParams const &, vector<double>
+  const &, vector<double> const &, gsl_rng*, vector<double> &);
+			 
+  \brief Generates a single instance of the disturbance.
+  
+  \param algParams Reference to algorithm parameters.
+  \param state Reference to current state.
+  \param control Reference to current control.
+  \param generator Random number generator.
+  \param disturbance Reference to disturbance.
+*/
+void generateDisturbance(InputParams const &, vector<double> const &, 
+			 vector<double> const &, gsl_rng*, vector<double> &);
 
 /*! \fn void systemEquation(InputParams const &, vector<double> const
   &, vector<double> const &, vector<double> const &, vector<double>
@@ -56,7 +93,7 @@ double stageCost(InputParams const &, vector<double> const &,
 /*! \fn double maxExpectation(InputParams const &, GenericInputs const
   &, vector<double> const &);
   
-  \brief Evaluates the current value function.
+  \brief Evaluates the current value function (overloaded).
   
   \param algParams Reference to algorithm parameters.
   \param allInputs Reference to generic input.
@@ -66,6 +103,21 @@ double stageCost(InputParams const &, vector<double> const &,
 */
 double maxExpectation(InputParams const &, GenericInputs const &, 
 		      vector<double> const &);
+
+/*! \fn double maxExpectation(InputParams const &, GenericInputs const
+  &, vector<double> const &);
+  
+  \brief Evaluates the current value function (overloaded).
+  
+  \param algParams Reference to algorithm parameters.
+  \param allInputs Reference to generic input.
+  \param state Reference to current state.
+  \param finalPositionExternal Reference to output final optimization position.
+
+  \return Current value function value. 
+*/
+double maxExpectation(InputParams const &, GenericInputs const &, 
+		      vector<double> const &, vector<double> &);
 
 /*! \fn double evalTerminalReward(InputParams const &, vector<double>
   const &);

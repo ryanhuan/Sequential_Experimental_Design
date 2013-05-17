@@ -50,8 +50,11 @@ public:
   vector<double> initialState;  //!< Initial state vector. 
   vector<double> controlsLowerBounds;//!< Lower bounds of the control space, assumed box constraint.
   vector<double> controlsUpperBounds;//!< Upper bounds of the control space, assumed box constraint.
-  int disturbanceStructure;     //!< Choice of the disturbance structure. 
+  int noiseModel;               //!< Choice of the noise model. 
+  int forwardModel;             //!< Choice of the forward model. 
   int nStochOptPerState;        //!< Number of repeated stochastic optimization runs at every evaluation of J_k(x_k).
+  bool simulateTrajectories;    //!< Flag to simulate trajectories.
+  int nTrajectories;            //!< Number of trajectory simulations.
   
   /* ADP value function approximation. */
   int featuresChoice;           //!< 1-total order polynomial, 2-Gaussian KL terms.

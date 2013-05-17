@@ -11,8 +11,11 @@ nInferenceParamsDim = 1
 initialState = 7.0  9.0
 controlsLowerBounds = 1.0
 controlsUpperBounds = 10.0
-disturbanceStructure = 0
+noiseModel = 1
+forwardModel = 1
 nStochOptPerState = 100
+simulateTrajectories = 0
+nTrajectories = 10
 
 % ADP value function approximation.
 featuresChoice = 2

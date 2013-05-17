@@ -37,8 +37,11 @@ InputParams::InputParams(InputParams const &other)
   initialState = other.initialState;
   controlsLowerBounds = other.controlsLowerBounds;
   controlsUpperBounds = other.controlsUpperBounds;
-  disturbanceStructure = other.disturbanceStructure;
+  noiseModel = other.noiseModel;
+  forwardModel = other.forwardModel;
   nStochOptPerState = other.nStochOptPerState;
+  simulateTrajectories = other.simulateTrajectories;
+  nTrajectories = other.nTrajectories;
   
   /* ADP value function approximation. */
   featuresChoice = other.featuresChoice;
@@ -103,8 +106,11 @@ InputParams& InputParams::operator=(InputParams const &rhs)
     initialState = rhs.initialState;
     controlsLowerBounds = rhs.controlsLowerBounds;
     controlsUpperBounds = rhs.controlsUpperBounds;
-    disturbanceStructure = rhs.disturbanceStructure;
+    noiseModel = rhs.noiseModel;
+    forwardModel = rhs.forwardModel;
     nStochOptPerState = rhs.nStochOptPerState;
+    simulateTrajectories = rhs.simulateTrajectories;
+    nTrajectories = rhs.nTrajectories;
   
     /* ADP value function approximation. */
     featuresChoice = rhs.featuresChoice;
@@ -164,8 +170,11 @@ void InputParams::setDefaultValues()
   nDisturbanceDim = -1;
   nInferenceParamsDim = -1;
   nSearchDim = -1;
-  disturbanceStructure = 0;
+  noiseModel = 0;
+  forwardModel = 0;
   nStochOptPerState = 1;
+  simulateTrajectories = 0;
+  nTrajectories = 1;
   
   /* ADP value function approximation. */
   featuresChoice = 1;
@@ -210,6 +219,11 @@ void InputParams::readInputParamsFile(string const fName)
   
   /* Open file. */
   f.open(fName.c_str());
+  if (!f) 
+  {
+    cout << "Error: Input file missing. " << endl;
+    exit(1);
+  }
   
   /* Read valid lines. */
   while(!f.eof())
@@ -321,15 +335,30 @@ void InputParams::readInputParamsFile(string const fName)
 	exit(1);
       }
     }
-    else if (strcmp(name, "disturbanceStructure") == 0)
+    else if (strcmp(name, "noiseModel") == 0)
     {
       readScalarAsString(val, data, pos);
-      disturbanceStructure = atoi(val);
+      noiseModel = atoi(val);
+    }
+    else if (strcmp(name, "forwardModel") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      forwardModel = atoi(val);
     }
     else if (strcmp(name, "nStochOptPerState") == 0)
     {
       readScalarAsString(val, data, pos);
       nStochOptPerState = atoi(val);
+    }
+    else if (strcmp(name, "simulateTrajectories") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      simulateTrajectories = atoi(val);
+    }
+    else if (strcmp(name, "nTrajectories") == 0)
+    {
+      readScalarAsString(val, data, pos);
+      nTrajectories = atoi(val);
     }
     
     /* ADP value function approximation. */

@@ -40,6 +40,8 @@ class LinearArch
   bool initialized;                 //!< Flag to indicator whether the class has been initialized. 
   
   /* Linear architecture. */
+  vector<int> nLocalRegressionSamplesAll;    //!< All local numbers of regression samples. 
+  vector<int> nLocalRegressionSamplesAllSum; //!< Cumulative sums of all local numbers of regression samples.
   /*! \brief Pointer to the original true function to be approximated.
   */
   double (*trueFcn)(InputParams const &, GenericInputs const &, vector<double> const &);
@@ -49,8 +51,11 @@ class LinearArch
   vector<double> stateSample;       //!< Input variable array.
   vector< vector<int> > refTable;   //!< Refernce table for total order polynomial.
   vector< vector<double> > ATrans;  //!< Working transpose of the LHS matrix for regression, altered upon exit from LAPACK.
-  vector< vector<double> > LHS;     //!< Reference LHS matrix for regression.
+  int nLocalRegressionSamples;      //!< Local number of regression samples.
+  double** LHS;                     //!< Reference LHS matrix for regression.
+  double** tempLHS;                 //!< Pointer to temporary LHS array for local and MPI computations.
   vector<double> B;                 //!< Working RHS vector for regression, altered upon exit from LAPACK.
+  vector<double> tempB;             //!< Temporary B vector for local computations.
   vector<double> RHS;               //!< Reference RHS vector for regression.
   vector<double> soln;              //!< Solution vector for regression.
   vector<double> singularValues;    //!< Storage for singular values for regression.
@@ -138,12 +143,22 @@ public:
     &);
     
     \brief Evaluates the feature functions at the given input variable
-    vector.
+    vector. (Overloaded)
 
     \param inputVar Input variable vector.
     \param storage Storage vector for evaluated feature values. 
   */
   void evalAllFeatures(vector<double> const &, vector<double> &);
+
+  /*! \fn void evalAllFeatures(vector<double> const &, double *);
+    
+    \brief Evaluates the feature functions at the given input variable
+    vector. (Overloaded)
+
+    \param inputVar Input variable vector.
+    \param storage Storage pointer for evaluated feature values. 
+  */
+  void evalAllFeatures(vector<double> const &, double *);
 
   /*! \fn double evalArchitecture(InputParams const &, vector<double>
     const &);
@@ -175,6 +190,16 @@ public:
     \param fName File name in string form.
   */
   void writeCoefsToFile(string const);
+
+  /*! \fn bool readCoefsFromFile(string const);
+    
+    \brief Read the coefs from file.
+    
+    \param fName File name in string form.
+
+    \return 0 if no error, 1 if file does not exist.
+  */
+  bool readCoefsFromFile(string const);
 
 };
 

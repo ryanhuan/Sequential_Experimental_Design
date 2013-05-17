@@ -1,19 +1,90 @@
 #include "userFunctions.h"
 
+void setNoiseStdDev(InputParams const &algParams, vector<double> &noiseStdDev)
+{
+  
+  /* Set the Gaussian noise standard deviation. */
+  switch (algParams.noiseModel)
+  {
+  case 1:
+    /* Constant standard deviation. */
+    for (unsigned int i = 0; i < noiseStdDev.size(); i++)
+      noiseStdDev[i] = 1.0;
+
+    break;
+    
+  default:
+    cout << "Error: Noise model " << algParams.noiseModel
+	 << " not available." << endl;
+    exit(1);
+  }
+  
+}
+
+void forwardModel(InputParams const &algParams, vector<double> const &theta, 
+		  vector<double> const &state, vector<double> const &control, 
+		  vector<double> &modelOutputs)
+{
+
+  /* Evaluate forward model (no noise). */
+  switch (algParams.forwardModel)
+  {
+  case 1:
+    /* G = d * theta. */
+    if (modelOutputs.size() != 1)
+    {
+      cout << "Error: forwardModel " << algParams.forwardModel << " for 1D model output only. " 
+	   << endl;
+      exit(1);
+    }
+    modelOutputs[0] = control[0] * theta[0];
+
+    break;
+    
+  default:
+    cout << "Error: Forward model " << algParams.forwardModel
+	 << " not available." << endl;
+    exit(1);
+  }
+
+}
+
+void generateDisturbance(InputParams const &algParams, vector<double> const &state, 
+			 vector<double> const &control, gsl_rng* generator,
+			 vector<double> &disturbance)
+{
+
+  /* Generate model parameter sample. */
+  //!!! in future generalize with a sample-generating subrouting
+  //!!! depending on the state we choose
+  static vector<double> thetaSample(algParams.nInferenceParamsDim, 0.0);
+  for (unsigned int i = 0; i < thetaSample.size(); i++)
+    thetaSample[i] = state[0] + sqrt(state[1]) * gsl_ran_gaussian(generator, 1.0);
+  
+  /* Set noise standard deviation and evaluate forward model. */
+  static vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
+  setNoiseStdDev(algParams, noiseStdDev);
+  static vector<double> modelOutputs(algParams.nDisturbanceDim, 0.0);
+  forwardModel(algParams, thetaSample, state, control, modelOutputs);
+  
+  /* Assume additive noise. */
+  for (unsigned int i = 0; i < disturbance.size(); i++)
+    disturbance[i] = modelOutputs[i] 
+      + noiseStdDev[i] * gsl_ran_gaussian(generator, 1.0);
+  
+}
+
 void systemEquation(InputParams const &algParams, vector<double> const &state, 
 		    vector<double> const &control, vector<double> const &disturbance,
 		    vector<double> &newState)
 {
   
-  /* Compute the Gaussian noise variance. */
-  vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
-  
-  //!!! constant standard deviation for now. 
-  for (unsigned int i = 0; i < noiseStdDev.size(); i++)
-    noiseStdDev[i] = 1.0;
+  /* Compute the Gaussian noise standard deviation. */
+  static vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
+  setNoiseStdDev(algParams, noiseStdDev);
   
   //!!!Bayesian inference for conjugate 1D linear Gaussian
-  //!!!model. Generalization needed for future.
+  //!!!model. Generalization needed for future for different state choices.
   newState[0] = (disturbance[0] * control[0] * state[1] + state[0] 
 		 * noiseStdDev[0] * noiseStdDev[0]) 
     / (control[0] * control[0] * state[1] + noiseStdDev[0] * noiseStdDev[0]);
@@ -41,8 +112,19 @@ double maxExpectation(InputParams const &algParams, GenericInputs const &allInpu
 		      vector<double> const &state)
 {
   
+  static vector<double> dummy(algParams.nControlsDim, 0.0);
+  return maxExpectation(algParams, allInputs, state, dummy);
+  
+}
+
+double maxExpectation(InputParams const &algParams, GenericInputs const &allInputs, 
+		      vector<double> const &state, 
+		      vector<double> &finalPositionExternal)
+{
+  
   /* Initialization. */
   double value(0.0), tempValue(0.0);
+  static vector<double> tempPosition(finalPositionExternal.size(), 0.0);
   
   /* Initialize GSL random generator. */
   static gsl_rng_type const * rngType(gsl_rng_ranlxs0);
@@ -104,12 +186,24 @@ double maxExpectation(InputParams const &algParams, GenericInputs const &allInpu
      * minimize the negative. */
     tempValue = -stoch.exportFinalObjHighQualityMC();
 
+    /* Extract final position. */
+    stoch.exportFinalPosition(tempPosition);
+
     /* Take the maximum. If want to see distribution, need to store
      * them or output them. */
     if (z == 0)
+    {
       value = tempValue;
+      finalPositionExternal = tempPosition;
+    }
     else
-      value = max<double>(value, tempValue);
+    {
+      if (tempValue > value)
+      {
+	value = tempValue;
+	finalPositionExternal = tempPosition;
+      }
+    }
   }
     
   return value;

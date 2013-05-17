@@ -64,6 +64,7 @@ void StochasticSearch::initialize(InputParams const &algParamsRef)
   rngType = gsl_rng_ranlxs0;
   generatorNoiseForHighQualityMC = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
+  gsl_rng_set(generatorNoiseForHighQualityMC, rand() + algParams.rank);
 
   initialized = 1;
 
@@ -204,6 +205,9 @@ void StochasticSearch::search(vector<double> const &state, GenericInputs allInpu
 
 //   // }
 
+  //!!! Hack final position. */
+  XHistory[storageCtr] = XInitial;
+  
   /* Perform high quality Monte Carlo evaluation at the final
    * position. Note we still take the negative of the DPCosts to be
    * consistent with what we did in the optimization algorithm due to
@@ -214,38 +218,37 @@ void StochasticSearch::search(vector<double> const &state, GenericInputs allInpu
 
   for (int i = 0; i < algParams.nFinalObjHighQualityMC; i++)
   {
-  //!!! here is just a temporary code for evaluating inside the
-  //!!! expectation. If we use actual stochastic optimization we will
-  //!!! need to use DPCostsInsideExpectation class.
-  
-  /* Set noise standard deviation. */
-  vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
-  //!!! constant standard deviation for now. 
-  for (unsigned int i = 0; i < noiseStdDev.size(); i++)
-    noiseStdDev[i] = 1.0;
+    //!!! here is just a temporary code for evaluating inside the
+    //!!! expectation. If we use actual stochastic optimization we
+    //!!! will need to use DPCostsInsideExpectation class.
+    vector<double> disturbance(algParams.nDisturbanceDim, 0.0);
+    generateDisturbance(algParams, state, XInitial, 
+			generatorNoiseForHighQualityMC, disturbance);
+    
+    /* Evaluate system equation to compute state at stage k+1. */
+    vector<double> newState(algParams.nStatesDim, 0.0);
+    (*(allInputs.systemEqnPtr))(algParams, state, XInitial, disturbance, newState);
+    
+    /* Evaluate stage and future rewards. */
+    if (((*(allInputs.futureFcnPtr)) != NULL) 
+    	&& (allInputs.futureLinearArchClassPtr == NULL))
+      /* J_{k+1} is terminal reward. */
+      finalObjHighQualityMC += -((*(allInputs.futureFcnPtr))(algParams, newState)
+      				 - (*(allInputs.stageFcnPtr))(algParams, state, 
+      							      XInitial, disturbance));
+    else if (((*(allInputs.futureFcnPtr)) == NULL) 
+    	     && (allInputs.futureLinearArchClassPtr != NULL))
+      /* J_{k+1} is intermediate reward. */
+      finalObjHighQualityMC += -((allInputs.futureLinearArchClassPtr->evalArchitecture)
+      				 (algParams, newState)
+      				 - (*(allInputs.stageFcnPtr))(algParams, state, 
+      							      XInitial, disturbance));
 
-  /* Generate disturbanceK. */
-  vector<double> thetaSample(algParams.nInferenceParamsDim, 0.0);
-  for (unsigned int i = 0; i < thetaSample.size(); i++)
-  {
-    thetaSample[i] = state[0] 
-      + sqrt(state[1]) * gsl_ran_gaussian(generatorNoiseForHighQualityMC, 1.0);
-  }
-
-  /* Evaluate forward model to obtain output. */
-  /* F = m * g + e. */
-  vector<double> disturbance(algParams.nDisturbanceDim, 0.0);
-  disturbance[0] = XInitial[0] * thetaSample[0] + 
-    noiseStdDev[0] * gsl_ran_gaussian(generatorNoiseForHighQualityMC, 1.0);
-
-  /* Evaluate system equation to compute state at stage k+1. */
-  vector<double> newState(algParams.nStatesDim, 0.0);
-  allInputs.systemEqnPtr(algParams, state, XInitial, disturbance, newState);
-
-  /* Evaluate J_{k+1}. */
-  finalObjHighQualityMC += -(allInputs.futureFcnPtr(algParams, newState)
-			     - allInputs.stageFcnPtr(algParams, state, 
-						      XInitial, disturbance));
+    else
+    {
+      cout << "Error: either both types of future function pointer defined or both NULL. Check function pointer assignments. " << endl;
+      exit(1);
+    }
   }  
   finalObjHighQualityMC /= double(algParams.nFinalObjHighQualityMC);
   
@@ -327,8 +330,7 @@ double StochasticSearch::exportFinalObjHighQualityMC()
 
 void StochasticSearch::exportFinalPosition(vector<double> &finalXExternal)
 {
-  for (unsigned int i = 0; i < XHistory[0].size(); i++)
-    finalXExternal[i] = XHistory[storageCtr][i];
+  finalXExternal = XHistory[storageCtr];
 }
 
 void StochasticSearch::makeTerminationLabel()
