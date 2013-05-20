@@ -64,7 +64,7 @@ Trajectories::Trajectories(Trajectories const &other)
   
   /* Compute local task allocation. */
   nLocalTrajectoriesAll = other.nLocalTrajectoriesAll;
-  nLocalTrajectoriesSumAll = other.nLocalTrajectoriesSumAll;
+  nLocalTrajectoriesAllSum = other.nLocalTrajectoriesAllSum;
   nLocalTrajectories = nLocalTrajectoriesAll[algParams.rank];
 
   /* Allocate space for local list of trajectories. */
@@ -111,7 +111,8 @@ Trajectories::Trajectories(Trajectories const &other)
   rngType = gsl_rng_ranlxs0;
   generator = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
-  gsl_rng_set(generator, rand() + algParams.rank);
+  // gsl_rng_set(generator, rand() + algParams.rank);
+  gsl_rng_set(generator, 1);
   
   initialized = other.initialized;
 
@@ -180,7 +181,7 @@ Trajectories& Trajectories::operator=(Trajectories const &rhs)
   
     /* Compute local task allocation. */
     nLocalTrajectoriesAll = rhs.nLocalTrajectoriesAll;
-    nLocalTrajectoriesSumAll = rhs.nLocalTrajectoriesSumAll;
+    nLocalTrajectoriesAllSum = rhs.nLocalTrajectoriesAllSum;
     nLocalTrajectories = nLocalTrajectoriesAll[algParams.rank];
 
     /* Copy over the data. */
@@ -206,8 +207,9 @@ Trajectories& Trajectories::operator=(Trajectories const &rhs)
     rngType = gsl_rng_ranlxs0;
     generator = gsl_rng_alloc(rngType);
     gsl_rng_env_setup();
-    gsl_rng_set(generator, rand() + algParams.rank);
-  
+    // gsl_rng_set(generator, rand() + algParams.rank);
+    gsl_rng_set(generator, 1);
+
     initialized = rhs.initialized;
 
   }
@@ -305,7 +307,8 @@ void Trajectories::initialize(InputParams const &refAlgParams)
   rngType = gsl_rng_ranlxs0;
   generator = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
-  gsl_rng_set(generator, rand() + algParams.rank);
+  // gsl_rng_set(generator, rand() + algParams.rank);
+  gsl_rng_set(generator, 1);
   
   initialized = 1;
   
@@ -324,6 +327,21 @@ void Trajectories::simulateTrajectories(vector<LinearArch> &arch)
   /* Initializations. */
   GenericInputs maxExpInputs;
   
+  if (algParams.rank == 1)
+  {
+  for (int t = 0; t < nLocalTrajectoriesAll[0]; t++)
+  {
+    gsl_ran_gaussian(generator, 1.0);
+    maxExpInputs.systemEqnPtr = &systemEquation;
+    maxExpInputs.stageFcnPtr = &stageCost;
+    maxExpInputs.futureFcnPtr = &evalTerminalReward;
+    maxExpInputs.futureLinearArchClassPtr = NULL;
+    maxExpectation(algParams, maxExpInputs, tempState, tempControl);
+    generateDisturbance(algParams, tempState, tempControl, generator, 
+    			tempDisturbance);
+  }
+  }
+
   for (int t = 0; t < nLocalTrajectories; t++)
   {
     
@@ -332,7 +350,7 @@ void Trajectories::simulateTrajectories(vector<LinearArch> &arch)
     for (int i = 0; i < algParams.nInferenceParamsDim; i++)
       thetaSamples[t][i] = algParams.initialState[0]
 	+ sqrt(algParams.initialState[1]) * gsl_ran_gaussian(generator, 1.0);
-    
+
     /* Reset initial state. */
     finalRewards[t] = 0.0;
     for (int i = 0; i < algParams.nStatesDim; i++)
@@ -487,24 +505,24 @@ void Trajectories::writeTrajectoriesToFile(string const fName)
     {
       /* Write theta sample for that run. */
       for (int i = 0; i < algParams.nInferenceParamsDim; i++)
-	f << thetaSamples[t][i] << "  ";
+	f << thetaSamplesAll[t][i] << "  ";
 
       /* Write all intermediate states, controls, and disturbance. */
       for (int k = 0; k < algParams.nStages; k++)
       {
 	for (int i = 0; i < algParams.nStatesDim; i++)
-	  f << states[t][k * algParams.nStatesDim + i] << "  ";
+	  f << statesAll[t][k * algParams.nStatesDim + i] << "  ";
 	for (int i = 0; i < algParams.nControlsDim; i++)
-	  f << controls[t][k * algParams.nControlsDim + i] << "  ";
+	  f << controlsAll[t][k * algParams.nControlsDim + i] << "  ";
 	for (int i = 0; i < algParams.nDisturbanceDim; i++)
-	  f << disturbance[t][k * algParams.nDisturbanceDim + i] << "  ";
+	  f << disturbanceAll[t][k * algParams.nDisturbanceDim + i] << "  ";
       }
       
       /* Write final states and rewards. */
       for (int i = 0; i < algParams.nStatesDim; i++)
-	f << states[t][algParams.nStages * algParams.nStatesDim + i] << "  ";
+	f << statesAll[t][algParams.nStages * algParams.nStatesDim + i] << "  ";
 
-      f << finalRewards[t] << endl;
+      f << finalRewardsAll[t] << endl;
     }
   
     /* Close file. */

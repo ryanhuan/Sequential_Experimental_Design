@@ -14,8 +14,8 @@ controlsUpperBounds = 10.0
 noiseModel = 1
 forwardModel = 1
 nStochOptPerState = 100
-simulateTrajectories = 0
-nTrajectories = 10
+simulateTrajectories = 1
+nTrajectories = 2
 
 % ADP value function approximation.
 featuresChoice = 2

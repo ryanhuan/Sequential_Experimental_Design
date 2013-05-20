@@ -55,7 +55,6 @@ LinearArch::LinearArch(LinearArch const &other)
      * matrix. */
     ATrans = other.ATrans;
     B = other.B;
-    tempB = other.tempB;
     RHS = other.RHS;
     /* Size of soln array required to be at least
      * algParams.nRegressionSamples for LAPACK. */
@@ -70,6 +69,7 @@ LinearArch::LinearArch(LinearArch const &other)
     nLocalRegressionSamples = nLocalRegressionSamplesAll[algParams.rank];
     
     /* Deep copy of pointers. */
+    tempB = other.tempB;
     LHS = new double*[algParams.nRegressionSamples];
     LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
     for (int i = 1; i < algParams.nRegressionSamples; i++)
@@ -125,7 +125,6 @@ LinearArch& LinearArch::operator=(LinearArch const &rhs)
        * matrix. */
       ATrans = rhs.ATrans;
       B = rhs.B;
-      tempB = rhs.tempB;
       RHS = rhs.RHS;
       /* Size of soln array required to be at least
        * algParams.nRegressionSamples for LAPACK. */
@@ -140,6 +139,7 @@ LinearArch& LinearArch::operator=(LinearArch const &rhs)
       nLocalRegressionSamples = nLocalRegressionSamplesAll[algParams.rank];
       
       /* Deep copy of pointers. */
+      tempB = rhs.tempB;
       LHS = new double*[algParams.nRegressionSamples];
       LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
       for (int i = 1; i < algParams.nRegressionSamples; i++)
@@ -205,7 +205,6 @@ void LinearArch::initialize(InputParams const &refAlgParams)
      * allocation. */
     ATrans.assign(algParams.nFeatures, vector<double>(algParams.nRegressionSamples, 0.0));
     B.assign(algParams.nRegressionSamples, 0.0);
-    tempB.assign(nLocalRegressionSamples, 0.0);
     RHS.assign(algParams.nRegressionSamples, 0.0);
     /* Size of soln array required to be at least
      * algParams.nRegressionSamples for LAPACK. */
@@ -236,7 +235,8 @@ void LinearArch::initialize(InputParams const &refAlgParams)
       else
 	nLocalRegressionSamplesAllSum[i] = nLocalRegressionSamplesAllSum[i - 1] + nLocalRegressionSamplesAll[i];
     }
-    if (nLocalRegressionSamplesAllSum[nLocalRegressionSamplesAllSum.size() - 1] != algParams.nTrajectories)
+
+    if (nLocalRegressionSamplesAllSum[nLocalRegressionSamplesAllSum.size() - 1] != algParams.nRegressionSamples)
     {
       cout << "Error: check local task allocation for regression samples." << endl;
       exit(1);
@@ -244,6 +244,7 @@ void LinearArch::initialize(InputParams const &refAlgParams)
     nLocalRegressionSamples = nLocalRegressionSamplesAll[algParams.rank];
 
     /* Local initializations. */
+    tempB.assign(nLocalRegressionSamples, 0.0);
     LHS = new double*[algParams.nRegressionSamples];
     LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
     for (int i = 1; i < algParams.nRegressionSamples; i++)
@@ -329,7 +330,7 @@ void LinearArch::makeCoefs(double (*trueFcnRef)(InputParams const &,
 	* sqrt(algParams.initialState[1]) + algParams.initialState[0];
       stateSample[1] = gsl_rng_uniform(generator)
       	* (algParams.initialState[1] - 1.0e-5) + 1.0e-5;
-      
+
       /* Evaluate the features on this state, and construct the LHS
        * matrix. */
       evalAllFeatures(stateSample, tempLHS[p]); 
