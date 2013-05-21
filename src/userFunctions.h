@@ -48,7 +48,7 @@ void forwardModel(InputParams const &, vector<double> const &,
 /*! \fn void generateDisturbance(InputParams const &, vector<double>
   const &, vector<double> const &, gsl_rng*, vector<double> &);
 			 
-  \brief Generates a single instance of the disturbance.
+  \brief Generates a single instance of the disturbance. (overloaded)
   
   \param algParams Reference to algorithm parameters.
   \param state Reference to current state.
@@ -58,6 +58,23 @@ void forwardModel(InputParams const &, vector<double> const &,
 */
 void generateDisturbance(InputParams const &, vector<double> const &, 
 			 vector<double> const &, gsl_rng*, vector<double> &);
+
+/*! \fn void generateDisturbance(InputParams const &, vector<double>
+  const &, vector<double> const &, vector<double> const &, gsl_rng*,
+  vector<double> &);
+			 
+  \brief Generates a single instance of the disturbance. (overloaded)
+  
+  \param algParams Reference to algorithm parameters.
+  \param theta Reference to true parameter.
+  \param state Reference to current state.
+  \param control Reference to current control.
+  \param generator Random number generator.
+  \param disturbance Reference to disturbance.
+*/
+void generateDisturbance(InputParams const &, vector<double> const &, 
+			 vector<double> const &, vector<double> const &, 
+			 gsl_rng*, vector<double> &);
 
 /*! \fn void systemEquation(InputParams const &, vector<double> const
   &, vector<double> const &, vector<double> const &, vector<double>
@@ -112,7 +129,8 @@ double maxExpectation(InputParams const &, GenericInputs const &,
   \param algParams Reference to algorithm parameters.
   \param allInputs Reference to generic input.
   \param state Reference to current state.
-  \param finalPositionExternal Reference to output final optimization position.
+  \param finalPositionExternal Reference to output final optimization 
+  position. 
 
   \return Current value function value. 
 */

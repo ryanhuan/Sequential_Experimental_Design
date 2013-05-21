@@ -48,6 +48,7 @@ class Trajectories
   double** controls;                    //!< Local controls over all stages of a trajectories.
   double** disturbance;                 //!< Local disturbance over all stages of a trajectories.
   double* finalRewards;                 //!< Local final rewards of the trajectories.
+  vector<double> tempTheta;             //!< Temporary parameter vector. 
   vector<double> tempState;             //!< Temporary state vector. 
   vector<double> tempControl;           //!< Temporary control vector. 
   vector<double> tempDisturbance;       //!< Temporary disturbance vector. 

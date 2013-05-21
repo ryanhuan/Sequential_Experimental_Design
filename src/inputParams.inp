@@ -15,7 +15,7 @@ noiseModel = 1
 forwardModel = 1
 nStochOptPerState = 100
 simulateTrajectories = 1
-nTrajectories = 2
+nTrajectories = 3
 
 % ADP value function approximation.
 featuresChoice = 2
@@ -28,10 +28,10 @@ optMethod = 6
 maxOptIters = 50
 relXNormTerminateTol = 1.0e-6
 nConsecRelXNormTerminateTol = 5
-nObjMC = 1000
+nObjMC = 10
 userXInitial = 5.5
 randomizeXInitial = 0
-nFinalObjHighQualityMC = 10000
+nFinalObjHighQualityMC = 100
 displayOptProgress = 0
 displayOptSummary = 0
 

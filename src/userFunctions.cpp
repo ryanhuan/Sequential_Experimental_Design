@@ -60,12 +60,21 @@ void generateDisturbance(InputParams const &algParams, vector<double> const &sta
   static vector<double> thetaSample(algParams.nInferenceParamsDim, 0.0);
   for (unsigned int i = 0; i < thetaSample.size(); i++)
     thetaSample[i] = state[0] + sqrt(state[1]) * gsl_ran_gaussian(generator, 1.0);
+
+  generateDisturbance(algParams, thetaSample, state, control, generator, disturbance);
   
+}
+
+void generateDisturbance(InputParams const &algParams, vector<double> const &theta, 
+			 vector<double> const &state, vector<double> const &control, 
+			 gsl_rng* generator, vector<double> &disturbance)
+{
+
   /* Set noise standard deviation and evaluate forward model. */
   static vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
   setNoiseStdDev(algParams, noiseStdDev);
   static vector<double> modelOutputs(algParams.nDisturbanceDim, 0.0);
-  forwardModel(algParams, thetaSample, state, control, modelOutputs);
+  forwardModel(algParams, theta, state, control, modelOutputs);
   
   /* Assume additive noise. */
   for (unsigned int i = 0; i < disturbance.size(); i++)
@@ -130,8 +139,7 @@ double maxExpectation(InputParams const &algParams, GenericInputs const &allInpu
   static gsl_rng_type const * rngType(gsl_rng_ranlxs0);
   static gsl_rng* generatorInit = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
-  // gsl_rng_set(generatorInit, rand() + algParams.rank);
-  gsl_rng_set(generatorInit, 1);
+  gsl_rng_set(generatorInit, rand() + algParams.rank);
   
   /* Initialization of StochasticSearch (mostly just memory
    * allocation); does not include making the initial position at this

@@ -162,7 +162,7 @@ LinearArch& LinearArch::operator=(LinearArch const &rhs)
     generator = gsl_rng_alloc(rngType);
     gsl_rng_env_setup();  
     gsl_rng_set(generator, rand() + algParams.rank);
-
+    
     initialized = rhs.initialized;
 
   }

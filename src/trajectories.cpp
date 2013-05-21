@@ -102,6 +102,7 @@ Trajectories::Trajectories(Trajectories const &other)
     disturbance[0][i] = other.disturbance[0][i];
   for (int i = 0; i < nLocalTrajectories; i++)
     finalRewards[i] = other.finalRewards[i];
+  tempTheta = other.tempTheta;
   tempState = other.tempState;
   tempControl = other.tempControl;
   tempDisturbance = other.tempDisturbance;
@@ -111,8 +112,7 @@ Trajectories::Trajectories(Trajectories const &other)
   rngType = gsl_rng_ranlxs0;
   generator = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
-  // gsl_rng_set(generator, rand() + algParams.rank);
-  gsl_rng_set(generator, 1);
+  gsl_rng_set(generator, rand() + algParams.rank);
   
   initialized = other.initialized;
 
@@ -198,6 +198,7 @@ Trajectories& Trajectories::operator=(Trajectories const &rhs)
       disturbance[0][i] = rhs.disturbance[0][i];
     for (int i = 0; i < nLocalTrajectories; i++)
       finalRewards[i] = rhs.finalRewards[i];
+    tempTheta = rhs.tempTheta;
     tempState = rhs.tempState;
     tempControl = rhs.tempControl;
     tempDisturbance = rhs.tempDisturbance;
@@ -207,8 +208,7 @@ Trajectories& Trajectories::operator=(Trajectories const &rhs)
     rngType = gsl_rng_ranlxs0;
     generator = gsl_rng_alloc(rngType);
     gsl_rng_env_setup();
-    // gsl_rng_set(generator, rand() + algParams.rank);
-    gsl_rng_set(generator, 1);
+    gsl_rng_set(generator, rand() + algParams.rank);
 
     initialized = rhs.initialized;
 
@@ -298,6 +298,7 @@ void Trajectories::initialize(InputParams const &refAlgParams)
     controls[i] = controls[i - 1] + algParams.nStages * algParams.nControlsDim;
     disturbance[i] = disturbance[i - 1] + algParams.nStages * algParams.nDisturbanceDim;
   }
+  tempTheta.assign(algParams.nInferenceParamsDim, 0.0);
   tempState.assign(algParams.nStatesDim, 0.0);
   tempControl.assign(algParams.nControlsDim, 0.0);
   tempDisturbance.assign(algParams.nDisturbanceDim, 0.0);
@@ -307,8 +308,7 @@ void Trajectories::initialize(InputParams const &refAlgParams)
   rngType = gsl_rng_ranlxs0;
   generator = gsl_rng_alloc(rngType);
   gsl_rng_env_setup();
-  // gsl_rng_set(generator, rand() + algParams.rank);
-  gsl_rng_set(generator, 1);
+  gsl_rng_set(generator, rand() + algParams.rank);
   
   initialized = 1;
   
@@ -326,21 +326,6 @@ void Trajectories::simulateTrajectories(vector<LinearArch> &arch)
 
   /* Initializations. */
   GenericInputs maxExpInputs;
-  
-  if (algParams.rank == 1)
-  {
-  for (int t = 0; t < nLocalTrajectoriesAll[0]; t++)
-  {
-    gsl_ran_gaussian(generator, 1.0);
-    maxExpInputs.systemEqnPtr = &systemEquation;
-    maxExpInputs.stageFcnPtr = &stageCost;
-    maxExpInputs.futureFcnPtr = &evalTerminalReward;
-    maxExpInputs.futureLinearArchClassPtr = NULL;
-    maxExpectation(algParams, maxExpInputs, tempState, tempControl);
-    generateDisturbance(algParams, tempState, tempControl, generator, 
-    			tempDisturbance);
-  }
-  }
 
   for (int t = 0; t < nLocalTrajectories; t++)
   {
@@ -348,8 +333,11 @@ void Trajectories::simulateTrajectories(vector<LinearArch> &arch)
     /* Sample local parameter instances from the prior. */
     //!!! For future need to generalize to non-Gaussians. 
     for (int i = 0; i < algParams.nInferenceParamsDim; i++)
+    {
       thetaSamples[t][i] = algParams.initialState[0]
 	+ sqrt(algParams.initialState[1]) * gsl_ran_gaussian(generator, 1.0);
+      tempTheta[i] = thetaSamples[t][i];
+    }
 
     /* Reset initial state. */
     finalRewards[t] = 0.0;
@@ -387,7 +375,7 @@ void Trajectories::simulateTrajectories(vector<LinearArch> &arch)
 	controls[t][k * algParams.nControlsDim + i] = tempControl[i];
       
       /* Generate and record disturbance. */
-      generateDisturbance(algParams, tempState, tempControl, generator, 
+      generateDisturbance(algParams, tempTheta, tempState, tempControl, generator, 
 			  tempDisturbance);
       for (unsigned int i = 0; i < tempDisturbance.size(); i++)
 	disturbance[t][k * algParams.nDisturbanceDim + i] = tempDisturbance[i];
