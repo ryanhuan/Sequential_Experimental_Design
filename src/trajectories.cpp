@@ -68,46 +68,49 @@ Trajectories::Trajectories(Trajectories const &other)
   nLocalTrajectories = nLocalTrajectoriesAll[algParams.rank];
 
   /* Allocate space for local list of trajectories. */
-  thetaSamples = new double*[nLocalTrajectories];
-  thetaSamples[0] = new double[nLocalTrajectories * algParams.nInferenceParamsDim];
-  states = new double*[nLocalTrajectories];
-  states[0] = new double[nLocalTrajectories 
-			 * (algParams.nStages + 1) * algParams.nStatesDim];
-  controls = new double*[nLocalTrajectories];
-  controls[0] = new double[nLocalTrajectories 
-			   * algParams.nStages * algParams.nControlsDim];
-  disturbance = new double*[nLocalTrajectories];
-  disturbance[0] = new double[nLocalTrajectories 
-			      * algParams.nStages * algParams.nDisturbanceDim];
-  finalRewards = new double[nLocalTrajectories];
-  for (int i = 1; i < nLocalTrajectories; i++)
+  if (nLocalTrajectories != 0)
   {
-    thetaSamples[i] = thetaSamples[i - 1] + algParams.nInferenceParamsDim;
-    states[i] = states[i - 1] + (algParams.nStages + 1) * algParams.nStatesDim;
-    controls[i] = controls[i - 1] + algParams.nStages * algParams.nControlsDim;
-    disturbance[i] = disturbance[i - 1] + algParams.nStages * algParams.nDisturbanceDim;
-  }
+    thetaSamples = new double*[nLocalTrajectories];
+    thetaSamples[0] = new double[nLocalTrajectories * algParams.nInferenceParamsDim];
+    states = new double*[nLocalTrajectories];
+    states[0] = new double[nLocalTrajectories 
+			   * (algParams.nStages + 1) * algParams.nStatesDim];
+    controls = new double*[nLocalTrajectories];
+    controls[0] = new double[nLocalTrajectories 
+			     * algParams.nStages * algParams.nControlsDim];
+    disturbance = new double*[nLocalTrajectories];
+    disturbance[0] = new double[nLocalTrajectories 
+				* algParams.nStages * algParams.nDisturbanceDim];
+    finalRewards = new double[nLocalTrajectories];
+    for (int i = 1; i < nLocalTrajectories; i++)
+    {
+      thetaSamples[i] = thetaSamples[i - 1] + algParams.nInferenceParamsDim;
+      states[i] = states[i - 1] + (algParams.nStages + 1) * algParams.nStatesDim;
+      controls[i] = controls[i - 1] + algParams.nStages * algParams.nControlsDim;
+      disturbance[i] = disturbance[i - 1] + algParams.nStages * algParams.nDisturbanceDim;
+    }
 
-  /* Copy over the data. */
-  for (int i = 0; i < nLocalTrajectories * algParams.nInferenceParamsDim; i++)
-    thetaSamples[0][i] = other.thetaSamples[0][i];
-  for (int i = 0; i < nLocalTrajectories * (algParams.nStages + 1) 
-	 * algParams.nStatesDim; i++)
-    states[0][i] = other.states[0][i];
-  for (int i = 0; i < nLocalTrajectories * algParams.nStages 
-	 * algParams.nControlsDim; i++)
-    controls[0][i] = other.controls[0][i];
-  for (int i = 0; i < nLocalTrajectories * algParams.nStages 
+    /* Copy over the data. */
+    for (int i = 0; i < nLocalTrajectories * algParams.nInferenceParamsDim; i++)
+      thetaSamples[0][i] = other.thetaSamples[0][i];
+    for (int i = 0; i < nLocalTrajectories * (algParams.nStages + 1) 
+	   * algParams.nStatesDim; i++)
+      states[0][i] = other.states[0][i];
+    for (int i = 0; i < nLocalTrajectories * algParams.nStages 
+	   * algParams.nControlsDim; i++)
+      controls[0][i] = other.controls[0][i];
+    for (int i = 0; i < nLocalTrajectories * algParams.nStages 
 	   * algParams.nDisturbanceDim; i++)
-    disturbance[0][i] = other.disturbance[0][i];
-  for (int i = 0; i < nLocalTrajectories; i++)
-    finalRewards[i] = other.finalRewards[i];
-  tempTheta = other.tempTheta;
-  tempState = other.tempState;
-  tempControl = other.tempControl;
-  tempDisturbance = other.tempDisturbance;
-  tempNewState = other.tempNewState;
-  
+      disturbance[0][i] = other.disturbance[0][i];
+    for (int i = 0; i < nLocalTrajectories; i++)
+      finalRewards[i] = other.finalRewards[i];
+    tempTheta = other.tempTheta;
+    tempState = other.tempState;
+    tempControl = other.tempControl;
+    tempDisturbance = other.tempDisturbance;
+    tempNewState = other.tempNewState;
+  }
+   
   /* Random number generator initialization. */
   rngType = gsl_rng_ranlxs0;
   generator = gsl_rng_alloc(rngType);
@@ -136,15 +139,19 @@ Trajectories::~Trajectories()
       delete [] disturbanceAll;
       delete [] finalRewardsAll;
     }
-    delete [] thetaSamples[0];
-    delete [] thetaSamples;
-    delete [] states[0];
-    delete [] states;
-    delete [] controls[0];
-    delete [] controls;
-    delete [] disturbance[0];
-    delete [] disturbance;
-    delete [] finalRewards;
+
+    if (nLocalTrajectories != 0)
+    {
+      delete [] thetaSamples[0];
+      delete [] thetaSamples;
+      delete [] states[0];
+      delete [] states;
+      delete [] controls[0];
+      delete [] controls;
+      delete [] disturbance[0];
+      delete [] disturbance;
+      delete [] finalRewards;
+    }
     gsl_rng_free(generator);
   }
   
@@ -184,29 +191,32 @@ Trajectories& Trajectories::operator=(Trajectories const &rhs)
     nLocalTrajectoriesAllSum = rhs.nLocalTrajectoriesAllSum;
     nLocalTrajectories = nLocalTrajectoriesAll[algParams.rank];
 
-    /* Copy over the data. */
-    for (int i = 0; i < nLocalTrajectories * algParams.nInferenceParamsDim; i++)
-      thetaSamples[0][i] = rhs.thetaSamples[0][i];
-    for (int i = 0; i < nLocalTrajectories * (algParams.nStages + 1) 
-	   * algParams.nStatesDim; i++)
-      states[0][i] = rhs.states[0][i];
-    for (int i = 0; i < nLocalTrajectories * algParams.nStages 
-	   * algParams.nControlsDim; i++)
-      controls[0][i] = rhs.controls[0][i];
-    for (int i = 0; i < nLocalTrajectories * algParams.nStages 
-	   * algParams.nDisturbanceDim; i++)
-      disturbance[0][i] = rhs.disturbance[0][i];
-    for (int i = 0; i < nLocalTrajectories; i++)
-      finalRewards[i] = rhs.finalRewards[i];
-    tempTheta = rhs.tempTheta;
-    tempState = rhs.tempState;
-    tempControl = rhs.tempControl;
-    tempDisturbance = rhs.tempDisturbance;
-    tempNewState = rhs.tempNewState;
-  
+    if (nLocalTrajectories != 0)
+    {
+      /* Copy over the data. */
+      for (int i = 0; i < nLocalTrajectories * algParams.nInferenceParamsDim; i++)
+	thetaSamples[0][i] = rhs.thetaSamples[0][i];
+      for (int i = 0; i < nLocalTrajectories * (algParams.nStages + 1) 
+	     * algParams.nStatesDim; i++)
+	states[0][i] = rhs.states[0][i];
+      for (int i = 0; i < nLocalTrajectories * algParams.nStages 
+	     * algParams.nControlsDim; i++)
+	controls[0][i] = rhs.controls[0][i];
+      for (int i = 0; i < nLocalTrajectories * algParams.nStages 
+	     * algParams.nDisturbanceDim; i++)
+	disturbance[0][i] = rhs.disturbance[0][i];
+      for (int i = 0; i < nLocalTrajectories; i++)
+	finalRewards[i] = rhs.finalRewards[i];
+      tempTheta = rhs.tempTheta;
+      tempState = rhs.tempState;
+      tempControl = rhs.tempControl;
+      tempDisturbance = rhs.tempDisturbance;
+      tempNewState = rhs.tempNewState;
+    }
+
     /* Random number generator initialization. */
-    rngType = gsl_rng_ranlxs0;
-    generator = gsl_rng_alloc(rngType);
+    rngType = rhs.rngType;
+    generator = rhs.generator;
     gsl_rng_env_setup();
     gsl_rng_set(generator, rand() + algParams.rank);
 
@@ -278,31 +288,36 @@ void Trajectories::initialize(InputParams const &refAlgParams)
   }
   nLocalTrajectories = nLocalTrajectoriesAll[algParams.rank];
 
-  /* Allocate space for local list of trajectories. */
-  thetaSamples = new double*[nLocalTrajectories];
-  thetaSamples[0] = new double[nLocalTrajectories * algParams.nInferenceParamsDim];
-  states = new double*[nLocalTrajectories];
-  states[0] = new double[nLocalTrajectories 
-			 * (algParams.nStages + 1) * algParams.nStatesDim];
-  controls = new double*[nLocalTrajectories];
-  controls[0] = new double[nLocalTrajectories 
-			   * algParams.nStages * algParams.nControlsDim];
-  disturbance = new double*[nLocalTrajectories];
-  disturbance[0] = new double[nLocalTrajectories 
-			      * algParams.nStages * algParams.nDisturbanceDim];
-  finalRewards = new double[nLocalTrajectories];
-  for (int i = 1; i < nLocalTrajectories; i++)
+  if (nLocalTrajectories != 0)
   {
-    thetaSamples[i] = thetaSamples[i - 1] + algParams.nInferenceParamsDim;
-    states[i] = states[i - 1] + (algParams.nStages + 1) * algParams.nStatesDim;
-    controls[i] = controls[i - 1] + algParams.nStages * algParams.nControlsDim;
-    disturbance[i] = disturbance[i - 1] + algParams.nStages * algParams.nDisturbanceDim;
+
+    /* Allocate space for local list of trajectories. */
+    thetaSamples = new double*[nLocalTrajectories];
+    thetaSamples[0] = new double[nLocalTrajectories * algParams.nInferenceParamsDim];
+    states = new double*[nLocalTrajectories];
+    states[0] = new double[nLocalTrajectories 
+			   * (algParams.nStages + 1) * algParams.nStatesDim];
+    controls = new double*[nLocalTrajectories];
+    controls[0] = new double[nLocalTrajectories 
+			     * algParams.nStages * algParams.nControlsDim];
+    disturbance = new double*[nLocalTrajectories];
+    disturbance[0] = new double[nLocalTrajectories 
+				* algParams.nStages * algParams.nDisturbanceDim];
+    finalRewards = new double[nLocalTrajectories];
+    for (int i = 1; i < nLocalTrajectories; i++)
+    {
+      thetaSamples[i] = thetaSamples[i - 1] + algParams.nInferenceParamsDim;
+      states[i] = states[i - 1] + (algParams.nStages + 1) * algParams.nStatesDim;
+      controls[i] = controls[i - 1] + algParams.nStages * algParams.nControlsDim;
+      disturbance[i] = disturbance[i - 1] + algParams.nStages * algParams.nDisturbanceDim;
+    }
+    tempTheta.assign(algParams.nInferenceParamsDim, 0.0);
+    tempState.assign(algParams.nStatesDim, 0.0);
+    tempControl.assign(algParams.nControlsDim, 0.0);
+    tempDisturbance.assign(algParams.nDisturbanceDim, 0.0);
+    tempNewState.assign(algParams.nStatesDim, 0.0);
+
   }
-  tempTheta.assign(algParams.nInferenceParamsDim, 0.0);
-  tempState.assign(algParams.nStatesDim, 0.0);
-  tempControl.assign(algParams.nControlsDim, 0.0);
-  tempDisturbance.assign(algParams.nDisturbanceDim, 0.0);
-  tempNewState.assign(algParams.nStatesDim, 0.0);
   
   /* Random number generator initialization. */
   rngType = gsl_rng_ranlxs0;
@@ -385,17 +400,22 @@ void Trajectories::simulateTrajectories(vector<LinearArch> &arch)
 		     tempNewState);
       for (unsigned int i = 0; i < tempNewState.size(); i++)
 	states[t][(k + 1) * algParams.nStatesDim + i] = tempNewState[i];
+
+      /* Evaluate and accumulate stage cost. */
+      finalRewards[t] -= stageCost(algParams, tempState, tempControl, 
+				   tempDisturbance);
       
       if (k == (algParams.nStages - 1))
 	/* Evaluate and accumulate terminal reward. */
-	finalRewards[t] += evalTerminalReward(algParams, tempState);
-      else
-	/* Evaluate and accumulate stage cost. */
-	finalRewards[t] -= stageCost(algParams, tempState, tempControl, 
-				     tempDisturbance);
+	finalRewards[t] += evalTerminalReward(algParams, tempNewState);
       
     }
     
+  }
+
+  if (nLocalTrajectories != 0)
+  {
+  
     /* Collect results on master node. */
     if (algParams.rank != 0)
     {
@@ -439,32 +459,36 @@ void Trajectories::simulateTrajectories(vector<LinearArch> &arch)
       /* Receive and store trajectories computed from other nodes. */
       for (int r = 1; r < algParams.nTasks; r++)
       {
-	MPI_Recv(thetaSamplesAll[nLocalTrajectoriesAllSum[r - 1]], 
-		 sizeof(double) * nLocalTrajectoriesAll[r] 
-		 * algParams.nInferenceParamsDim, MPI_CHAR, 
-		 r, r, MPI_COMM_WORLD, &algParams.status);
+	if (nLocalTrajectoriesAll[r] != 0)
+	{
+	  MPI_Recv(thetaSamplesAll[nLocalTrajectoriesAllSum[r - 1]], 
+		   sizeof(double) * nLocalTrajectoriesAll[r] 
+		   * algParams.nInferenceParamsDim, MPI_CHAR, 
+		   r, r, MPI_COMM_WORLD, &(algParams.status));
 
-	MPI_Recv(statesAll[nLocalTrajectoriesAllSum[r - 1]], 
-		 sizeof(double) * nLocalTrajectoriesAll[r] 
-		 * (algParams.nStages + 1) * algParams.nStatesDim, MPI_CHAR, 
-		 r, r + algParams.nTasks, MPI_COMM_WORLD, &algParams.status);
+	  MPI_Recv(statesAll[nLocalTrajectoriesAllSum[r - 1]], 
+		   sizeof(double) * nLocalTrajectoriesAll[r] 
+		   * (algParams.nStages + 1) * algParams.nStatesDim, MPI_CHAR, 
+		   r, r + algParams.nTasks, MPI_COMM_WORLD, &(algParams.status));
 
-	MPI_Recv(controlsAll[nLocalTrajectoriesAllSum[r - 1]], 
-		 sizeof(double) * nLocalTrajectoriesAll[r] 
-		 * algParams.nStages * algParams.nControlsDim, MPI_CHAR, 
-		 r, r + 2 * algParams.nTasks, MPI_COMM_WORLD, &algParams.status);
+	  MPI_Recv(controlsAll[nLocalTrajectoriesAllSum[r - 1]], 
+		   sizeof(double) * nLocalTrajectoriesAll[r] 
+		   * algParams.nStages * algParams.nControlsDim, MPI_CHAR, 
+		   r, r + 2 * algParams.nTasks, MPI_COMM_WORLD, &(algParams.status));
 
-	MPI_Recv(disturbanceAll[nLocalTrajectoriesAllSum[r - 1]], 
-		 sizeof(double) * nLocalTrajectoriesAll[r] 
-		 * algParams.nStages * algParams.nDisturbanceDim, MPI_CHAR, 
-		 r, r + 3 * algParams.nTasks, MPI_COMM_WORLD, &algParams.status);
+	  MPI_Recv(disturbanceAll[nLocalTrajectoriesAllSum[r - 1]], 
+		   sizeof(double) * nLocalTrajectoriesAll[r] 
+		   * algParams.nStages * algParams.nDisturbanceDim, MPI_CHAR, 
+		   r, r + 3 * algParams.nTasks, MPI_COMM_WORLD, &(algParams.status));
 
-	MPI_Recv(&(finalRewardsAll[nLocalTrajectoriesAllSum[r - 1]]), 
-		 sizeof(double) * nLocalTrajectoriesAll[r], MPI_CHAR, 
-		 r, r + 4 * algParams.nTasks, MPI_COMM_WORLD, &algParams.status);
+	  MPI_Recv(&(finalRewardsAll[nLocalTrajectoriesAllSum[r - 1]]), 
+		   sizeof(double) * nLocalTrajectoriesAll[r], MPI_CHAR, 
+		   r, r + 4 * algParams.nTasks, MPI_COMM_WORLD, &(algParams.status));
+	}
       }
       
-    }
+    }  
+
   }
   
 }

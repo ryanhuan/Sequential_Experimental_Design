@@ -1,6 +1,7 @@
 #include "userFunctions.h"
 
-void setNoiseStdDev(InputParams const &algParams, vector<double> &noiseStdDev)
+void setNoiseStdDev(InputParams const &algParams, vector<double> const &state, 
+		    vector<double> const &control, vector<double> &noiseStdDev)
 {
   
   /* Set the Gaussian noise standard deviation. */
@@ -11,6 +12,20 @@ void setNoiseStdDev(InputParams const &algParams, vector<double> &noiseStdDev)
     for (unsigned int i = 0; i < noiseStdDev.size(); i++)
       noiseStdDev[i] = 1.0;
 
+    break;
+
+  case 2:
+    /* State-dependent standard deviation. */
+    for (unsigned int i = 0; i < noiseStdDev.size(); i++)
+      noiseStdDev[i] = sqrt(exp(0.5 * state[0]));
+    
+    break;
+    
+  case 3:
+    /* State- and control-dependent standard deviation. */
+    for (unsigned int i = 0; i < noiseStdDev.size(); i++)
+      noiseStdDev[i] = sqrt(7.0) / 5.0 * pow(control[0], state[0] - 6.5);
+    
     break;
     
   default:
@@ -72,7 +87,7 @@ void generateDisturbance(InputParams const &algParams, vector<double> const &the
 
   /* Set noise standard deviation and evaluate forward model. */
   static vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
-  setNoiseStdDev(algParams, noiseStdDev);
+  setNoiseStdDev(algParams, state, control, noiseStdDev);
   static vector<double> modelOutputs(algParams.nDisturbanceDim, 0.0);
   forwardModel(algParams, theta, state, control, modelOutputs);
   
@@ -90,7 +105,7 @@ void systemEquation(InputParams const &algParams, vector<double> const &state,
   
   /* Compute the Gaussian noise standard deviation. */
   static vector<double> noiseStdDev(algParams.nDisturbanceDim, 0.0);
-  setNoiseStdDev(algParams, noiseStdDev);
+  setNoiseStdDev(algParams, state, control, noiseStdDev);
   
   //!!!Bayesian inference for conjugate 1D linear Gaussian
   //!!!model. Generalization needed for future for different state choices.
@@ -112,7 +127,7 @@ double stageCost(InputParams const &algParams, vector<double> const &state,
   //!!! quadratic control-cost for now.
   for (unsigned int i = 0; i < control.size(); i++)
     cost += 0.01 * control[i] * control[i];
-  
+
   return cost;
 
 }
@@ -214,7 +229,7 @@ double maxExpectation(InputParams const &algParams, GenericInputs const &allInpu
       }
     }
   }
-    
+
   return value;
   
 }

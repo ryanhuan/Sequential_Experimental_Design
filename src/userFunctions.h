@@ -21,14 +21,18 @@ defined by the user.
 
 using namespace std;
 
-/*! \fn void setNoiseStdDev(InputParams const &, vector<double> &);
+/*! \fn void setNoiseStdDev(InputParams const &, vector<double> const
+  &, vector<double> const &, vector<double> &);
   
   \brief Computes the Gaussian noise standard deviation.
   
   \param algParams Reference to algorithm parameters.
+  \param state Reference to current state.
+  \param control Reference to current control.
   \param noiseStdDev Reference to noise standard deviation.
 */
-void setNoiseStdDev(InputParams const &, vector<double> &);
+void setNoiseStdDev(InputParams const &, vector<double> const &, 
+		    vector<double> const &, vector<double> &);
 
 /*! \fn void forwardModel(InputParams const &, vector<double> const &,
   vector<double> const &, vector<double> const &, vector<double> &);

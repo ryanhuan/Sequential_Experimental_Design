@@ -521,7 +521,7 @@ void InputParams::readInputParamsFile(string const fName)
   case 2:
     /* Terms from Gaussian KL divergence: 1.0, mean, mean-squared,
      * variance, log-variance. In that order. */
-    nFeatures = 5;
+    nFeatures = 6;
     break;
     
   default:
@@ -540,8 +540,8 @@ void InputParams::addMPIInfo(int const nTasksRef, int const rankRef)
 {
   
   /* Store MPI variables. */
-   nTasks = nTasksRef;
-   rank = rankRef;
+  nTasks = nTasksRef;
+  rank = rankRef;
   
 }
 

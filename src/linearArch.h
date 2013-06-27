@@ -53,14 +53,14 @@ class LinearArch
   vector< vector<double> > ATrans;  //!< Working transpose of the LHS matrix for regression, altered upon exit from LAPACK.
   int nLocalRegressionSamples;      //!< Local number of regression samples.
   double** LHS;                     //!< Reference LHS matrix for regression.
-  double** tempLHS;                 //!< Pointer to temporary LHS array for local and MPI computations.
   vector<double> B;                 //!< Working RHS vector for regression, altered upon exit from LAPACK.
-  vector<double> tempB;             //!< Temporary B vector for local computations.
   vector<double> RHS;               //!< Reference RHS vector for regression.
   vector<double> soln;              //!< Solution vector for regression.
   vector<double> singularValues;    //!< Storage for singular values for regression.
   int lwork;                        //!< Size for work array for regression.
   vector<double> work;              //!< Work array for regression.
+  vector<double> tempB;             //!< Temporary B vector for local computations.
+  double** tempLHS;                 //!< Pointer to temporary LHS array for local and MPI computations.
 
 public:
 

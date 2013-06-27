@@ -15,13 +15,15 @@ noiseModel = 1
 forwardModel = 1
 nStochOptPerState = 100
 simulateTrajectories = 1
-nTrajectories = 3
+nTrajectories = 10
+%nTrajectories = 5000
 
 % ADP value function approximation.
 featuresChoice = 2
 pOrder = 4
 coefsConstructionMethod = 1
 nRegressionSamples = 100
+%nRegressionSamples = 10000
 
 % Stochastic Optimization.
 optMethod = 6
@@ -29,9 +31,11 @@ maxOptIters = 50
 relXNormTerminateTol = 1.0e-6
 nConsecRelXNormTerminateTol = 5
 nObjMC = 10
+%nObjMC = 1000
 userXInitial = 5.5
-randomizeXInitial = 0
-nFinalObjHighQualityMC = 100
+randomizeXInitial = 1
+nFinalObjHighQualityMC = 1000
+%nFinalObjHighQualityMC = 100000
 displayOptProgress = 0
 displayOptSummary = 0
 

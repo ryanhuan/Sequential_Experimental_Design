@@ -83,11 +83,29 @@ public:
   */
   StochasticSearch(InputParams const &);
 
+  /*! \fn StochasticSearch(StochasticSearch const &);
+    
+    \brief Copy constructor of the StochasticSearch class.
+    
+    \param other Reference to the source class to be copied from.
+  */
+  StochasticSearch(StochasticSearch const &);
+
   /*! \fn ~StochasticSearch();
     
     \brief Destructor for the StochasticSearch class.
   */
   ~StochasticSearch();
+
+  /*! \fn StochasticSearch& operator=(StochasticSearch const &);
+    
+    \brief The = operator of the StochasticSearch class.
+
+    \param rhs Reference to input class.
+    
+    \return Reference to output class.
+  */
+  StochasticSearch& operator=(StochasticSearch const &);
 
   /*! \fn void initialize(InputParams const &);
     

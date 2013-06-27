@@ -14,6 +14,42 @@ StochasticSearch::StochasticSearch(InputParams const &algParamsRef)
   initialize(algParamsRef);
 }
 
+StochasticSearch::StochasticSearch(StochasticSearch const &other)
+{
+  
+  /* Initializations. */
+  algParams = other.algParams;
+
+  nIter = other.nIter;
+  storageCtr = other.storageCtr;
+  XInitial = other.XInitial;
+  dataLabels = other.dataLabels;
+  terminationLabel = other.terminationLabel;
+  finalObjHighQualityMC = other.finalObjHighQualityMC;
+  iterHistory = other.iterHistory;
+  XHistory = other.XHistory;
+  valHistory = other.valHistory;
+  gradNormHistory = other.gradNormHistory;
+  terminationCondition = other.terminationCondition;
+  nConsecRelXNorm = other.nConsecRelXNorm;
+  previousXNorm = other.previousXNorm;
+  curXNorm = other.curXNorm;
+  isLocalMin = other.isLocalMin;
+  
+  //!!!
+  // DPCostsForHighQualityMC = new DPCostsInsideExpectation(refControls);
+
+  /* Random number generator initializations. */
+  rngType = gsl_rng_ranlxs0;
+  generatorNoiseForHighQualityMC = gsl_rng_alloc(rngType);
+  gsl_rng_env_setup();
+  gsl_rng_set(generatorNoiseForHighQualityMC, rand() + algParams.rank);
+  
+  initialized = other.initialized;
+  positionInitialized = other.positionInitialized;
+
+}
+
 StochasticSearch::~StochasticSearch()
 {
   
@@ -22,6 +58,51 @@ StochasticSearch::~StochasticSearch()
   {
     gsl_rng_free(generatorNoiseForHighQualityMC);
   }
+  
+}
+
+StochasticSearch& StochasticSearch::operator=(StochasticSearch const &rhs)
+{
+
+  /* Protect against invalid self-assignment. */
+  if (this != &rhs)
+  {
+    
+    /* Initializations. */
+    algParams = rhs.algParams;
+
+    nIter = rhs.nIter;
+    storageCtr = rhs.storageCtr;
+    XInitial = rhs.XInitial;
+    dataLabels = rhs.dataLabels;
+    terminationLabel = rhs.terminationLabel;
+    finalObjHighQualityMC = rhs.finalObjHighQualityMC;
+    iterHistory = rhs.iterHistory;
+    XHistory = rhs.XHistory;
+    valHistory = rhs.valHistory;
+    gradNormHistory = rhs.gradNormHistory;
+    terminationCondition = rhs.terminationCondition;
+    nConsecRelXNorm = rhs.nConsecRelXNorm;
+    previousXNorm = rhs.previousXNorm;
+    curXNorm = rhs.curXNorm;
+    isLocalMin = rhs.isLocalMin;
+  
+    //!!!
+    // DPCostsForHighQualityMC = new DPCostsInsideExpectation(refControls);
+
+    /* Random number generator initializations. */
+    rngType = gsl_rng_ranlxs0;
+    generatorNoiseForHighQualityMC = gsl_rng_alloc(rngType);
+    gsl_rng_env_setup();
+    gsl_rng_set(generatorNoiseForHighQualityMC, rand() + algParams.rank);
+  
+    initialized = rhs.initialized;
+    positionInitialized = rhs.positionInitialized;
+
+  }
+  
+  /* By convention, always return *this. */
+  return *this;
   
 }
 

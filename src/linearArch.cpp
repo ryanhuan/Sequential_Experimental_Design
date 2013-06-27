@@ -14,22 +14,6 @@ LinearArch::LinearArch(InputParams const &refAlgParams)
   initialize(refAlgParams);
 }
 
-LinearArch::~LinearArch()
-{
-
-  if (initialized)
-  {
-    /* Free memory. */
-    delete [] LHS[0];
-    delete [] LHS;
-    delete [] tempLHS[0];
-    delete [] tempLHS;
-
-    gsl_rng_free(generator);
-  }
-  
-}
-
 LinearArch::LinearArch(LinearArch const &other)
 {
 
@@ -47,43 +31,51 @@ LinearArch::LinearArch(LinearArch const &other)
   /* Construct coefficients via regression. */
   if (algParams.coefsConstructionMethod == 1)
   {
-    /* Note ATrans is stored in its transposed form from the algebraic
-     * form of the matrix to accomodate LAPACK (which uses its
-     * transpose). Note ATrans is overwritten by right singular
-     * vectors upon output of linear least squares computation. LHS
-     * (in non-transposed form) will be used to store the original
-     * matrix. */
-    ATrans = other.ATrans;
-    B = other.B;
-    RHS = other.RHS;
-    /* Size of soln array required to be at least
-     * algParams.nRegressionSamples for LAPACK. */
-    soln = other.soln;
+
+    if (algParams.rank == 0)
+    {
+      /* Note ATrans is stored in its transposed form from the algebraic
+       * form of the matrix to accomodate LAPACK (which uses its
+       * transpose). Note ATrans is overwritten by right singular
+       * vectors upon output of linear least squares computation. LHS
+       * (in non-transposed form) will be used to store the original
+       * matrix. */
+      ATrans = other.ATrans;
+      B = other.B;
+      RHS = other.RHS;
+      /* Size of soln array required to be at least
+       * algParams.nRegressionSamples for LAPACK. */
+      soln = other.soln;
     
-    singularValues = other.singularValues;
-    lwork = other.lwork;
-    work = other.work;
-    
+      singularValues = other.singularValues;
+      lwork = other.lwork;
+      work = other.work;
+
+      /* Deep copy of pointers. */
+      LHS = new double*[algParams.nRegressionSamples];
+      LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
+      for (int i = 1; i < algParams.nRegressionSamples; i++)
+	LHS[i] = LHS[i - 1] + algParams.nFeatures;
+      for (int i = 0; i < algParams.nRegressionSamples * algParams.nFeatures; i++)
+	LHS[0][i] = other.LHS[0][i];
+    }
+
     nLocalRegressionSamplesAll = other.nLocalRegressionSamplesAll;
     nLocalRegressionSamplesAllSum = other.nLocalRegressionSamplesAllSum;
     nLocalRegressionSamples = nLocalRegressionSamplesAll[algParams.rank];
     
-    /* Deep copy of pointers. */
-    tempB = other.tempB;
-    LHS = new double*[algParams.nRegressionSamples];
-    LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
-    for (int i = 1; i < algParams.nRegressionSamples; i++)
-      LHS[i] = LHS[i - 1] + algParams.nFeatures;
-    tempLHS = new double*[nLocalRegressionSamples];
-    tempLHS[0] = new double[nLocalRegressionSamples * algParams.nFeatures];
-    for (int i = 1; i < nLocalRegressionSamples; i++)
-      tempLHS[i] = tempLHS[i - 1] + algParams.nFeatures;
+    if (nLocalRegressionSamples != 0)
+    {
+      tempB = other.tempB;
 
-    /* Copy over the data of pointer storage. */
-    for (int i = 0; i < algParams.nRegressionSamples * algParams.nFeatures; i++)
-      LHS[0][i] = other.LHS[0][i];
-    for (int i = 0; i < nLocalRegressionSamples * algParams.nFeatures; i++)
-      tempLHS[0][i] = other.tempLHS[0][i];
+      /* Deep copy of pointers. */
+      tempLHS = new double*[nLocalRegressionSamples];
+      tempLHS[0] = new double[nLocalRegressionSamples * algParams.nFeatures];
+      for (int i = 1; i < nLocalRegressionSamples; i++)
+	tempLHS[i] = tempLHS[i - 1] + algParams.nFeatures;
+      for (int i = 0; i < nLocalRegressionSamples * algParams.nFeatures; i++)
+	tempLHS[0][i] = other.tempLHS[0][i];
+    }
   }
 
   /* Random number generator initialization. */
@@ -94,6 +86,29 @@ LinearArch::LinearArch(LinearArch const &other)
 
   initialized = other.initialized;
 
+}
+
+LinearArch::~LinearArch()
+{
+
+  if (initialized)
+  {
+    /* Free memory. */
+    if (algParams.rank == 0)
+    {
+      delete [] LHS[0];
+      delete [] LHS;
+    }
+    
+    if (nLocalRegressionSamples != 0)
+    {
+      delete [] tempLHS[0];
+      delete [] tempLHS;
+    }
+    
+    gsl_rng_free(generator);
+  }
+  
 }
 
 LinearArch& LinearArch::operator=(LinearArch const &rhs)
@@ -117,44 +132,42 @@ LinearArch& LinearArch::operator=(LinearArch const &rhs)
     /* Construct coefficients via regression. */
     if (algParams.coefsConstructionMethod == 1)
     {
-      /* Note ATrans is stored in its transposed form from the
-       * algebraic form of the matrix to accomodate LAPACK (which uses
-       * its transpose). Note ATrans is overwritten by right singular
-       * vectors upon output of linear least squares computation. LHS
-       * (in non-transposed form) will be used to store the original
-       * matrix. */
-      ATrans = rhs.ATrans;
-      B = rhs.B;
-      RHS = rhs.RHS;
-      /* Size of soln array required to be at least
-       * algParams.nRegressionSamples for LAPACK. */
-      soln = rhs.soln;
+
+      if (algParams.rank == 0)
+      {
+	/* Note ATrans is stored in its transposed form from the
+	 * algebraic form of the matrix to accomodate LAPACK (which uses
+	 * its transpose). Note ATrans is overwritten by right singular
+	 * vectors upon output of linear least squares computation. LHS
+	 * (in non-transposed form) will be used to store the original
+	 * matrix. */
+	ATrans = rhs.ATrans;
+	B = rhs.B;
+	RHS = rhs.RHS;
+	/* Size of soln array required to be at least
+	 * algParams.nRegressionSamples for LAPACK. */
+	soln = rhs.soln;
       
-      singularValues = rhs.singularValues;
-      lwork = rhs.lwork;
-      work = rhs.work;
+	singularValues = rhs.singularValues;
+	lwork = rhs.lwork;
+	work = rhs.work;
+
+	/* Copy over the data. */
+	for (int i = 0; i < algParams.nRegressionSamples * algParams.nFeatures; i++)
+	  LHS[0][i] = rhs.LHS[0][i];
+      }
 
       nLocalRegressionSamplesAll = rhs.nLocalRegressionSamplesAll;
       nLocalRegressionSamplesAllSum = rhs.nLocalRegressionSamplesAllSum;
       nLocalRegressionSamples = nLocalRegressionSamplesAll[algParams.rank];
-      
-      /* Deep copy of pointers. */
-      tempB = rhs.tempB;
-      LHS = new double*[algParams.nRegressionSamples];
-      LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
-      for (int i = 1; i < algParams.nRegressionSamples; i++)
-	LHS[i] = LHS[i - 1] + algParams.nFeatures;
-      tempLHS = new double*[nLocalRegressionSamples];
-      tempLHS[0] = new double[nLocalRegressionSamples * algParams.nFeatures];
-      for (int i = 1; i < nLocalRegressionSamples; i++)
-	tempLHS[i] = tempLHS[i - 1] + algParams.nFeatures;
-      
-      /* Copy over the data of pointer storage. */
-      for (int i = 0; i < algParams.nRegressionSamples * algParams.nFeatures; i++)
-	LHS[0][i] = rhs.LHS[0][i];
-      for (int i = 0; i < nLocalRegressionSamples * algParams.nFeatures; i++)
-	tempLHS[0][i] = rhs.tempLHS[0][i];
-    
+
+      if (nLocalRegressionSamples != 0)
+      {
+	/* Copy over the data. */
+	tempB = rhs.tempB;
+	for (int i = 0; i < nLocalRegressionSamples * algParams.nFeatures; i++)
+	  tempLHS[0][i] = rhs.tempLHS[0][i];
+      }
     }
     
     /* Random number generator initialization. */
@@ -195,27 +208,36 @@ void LinearArch::initialize(InputParams const &refAlgParams)
   /* Construct coefficients via regression. */
   if (algParams.coefsConstructionMethod == 1)
   {
-    /* Memory allocation for regression method. Note ATrans is stored
-     * in its transposed form from the algebraic form of the matrix to
-     * accomodate LAPACK (which uses its transpose). Note ATrans is
-     * overwritten by right singular vectors upon output of linear
-     * least squares computation. LHS (in non-transposed form) will be
-     * used to store the original matrix. Note matrices in the form of
-     * vector of vectors will NOT have contiguous memory
-     * allocation. */
-    ATrans.assign(algParams.nFeatures, vector<double>(algParams.nRegressionSamples, 0.0));
-    B.assign(algParams.nRegressionSamples, 0.0);
-    RHS.assign(algParams.nRegressionSamples, 0.0);
-    /* Size of soln array required to be at least
-     * algParams.nRegressionSamples for LAPACK. */
-    soln.assign(algParams.nFeatures, 0.0);
+    
+    if (algParams.rank == 0)
+    {
+      /* Memory allocation for regression method. Note ATrans is
+       * stored in its transposed form from the algebraic form of the
+       * matrix to accomodate LAPACK (which uses its transpose). Note
+       * ATrans is overwritten by right singular vectors upon output
+       * of linear least squares computation. LHS (in non-transposed
+       * form) will be used to store the original matrix. Note
+       * matrices in the form of vector of vectors will NOT have
+       * contiguous memory allocation. */
+      ATrans.assign(algParams.nFeatures, vector<double>(algParams.nRegressionSamples, 0.0));
+      B.assign(algParams.nRegressionSamples, 0.0);
+      RHS.assign(algParams.nRegressionSamples, 0.0);
+      /* Size of soln array required to be at least
+       * algParams.nRegressionSamples for LAPACK. */
+      soln.assign(algParams.nFeatures, 0.0);
+      
+      singularValues.assign(algParams.nFeatures, 0.0);
+      lwork = 3 * min<int>(algParams.nFeatures, algParams.nRegressionSamples) 
+	+ max<int>(2 * min<int>(algParams.nFeatures, algParams.nRegressionSamples),
+		   max<int>(algParams.nFeatures, algParams.nRegressionSamples));
+      work.assign(lwork, 0.0);
 
-    singularValues.assign(algParams.nFeatures, 0.0);
-    lwork = 3 * min<int>(algParams.nFeatures, algParams.nRegressionSamples) 
-      + max<int>(2 * min<int>(algParams.nFeatures, algParams.nRegressionSamples),
-		 max<int>(algParams.nFeatures, algParams.nRegressionSamples));
-    work.assign(lwork, 0.0);
-
+      LHS = new double*[algParams.nRegressionSamples];
+      LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
+      for (int i = 1; i < algParams.nRegressionSamples; i++)
+	LHS[i] = LHS[i - 1] + algParams.nFeatures;
+    }
+    
     /* Compute local task allocation. */
     nLocalRegressionSamplesAll.assign(algParams.nTasks, 0);
     nLocalRegressionSamplesAllSum.assign(algParams.nTasks, 0);
@@ -228,7 +250,7 @@ void LinearArch::initialize(InputParams const &refAlgParams)
 	nLocalRegressionSamplesAll[i] = base + 1;
       else
 	nLocalRegressionSamplesAll[i] = base;
-
+      
       /* Summation. */
       if (i == 0)
 	nLocalRegressionSamplesAllSum[i] = nLocalRegressionSamplesAll[i];
@@ -244,16 +266,15 @@ void LinearArch::initialize(InputParams const &refAlgParams)
     nLocalRegressionSamples = nLocalRegressionSamplesAll[algParams.rank];
 
     /* Local initializations. */
-    tempB.assign(nLocalRegressionSamples, 0.0);
-    LHS = new double*[algParams.nRegressionSamples];
-    LHS[0] = new double[algParams.nRegressionSamples * algParams.nFeatures];
-    for (int i = 1; i < algParams.nRegressionSamples; i++)
-      LHS[i] = LHS[i - 1] + algParams.nFeatures;
-    tempLHS = new double*[nLocalRegressionSamples];
-    tempLHS[0] = new double[nLocalRegressionSamples * algParams.nFeatures];
-    for (int i = 1; i < nLocalRegressionSamples; i++)
-      tempLHS[i] = tempLHS[i - 1] + algParams.nFeatures;
-
+    if (nLocalRegressionSamples != 0)
+    {
+      tempB.assign(nLocalRegressionSamples, 0.0);
+      tempLHS = new double*[nLocalRegressionSamples];
+      tempLHS[0] = new double[nLocalRegressionSamples * algParams.nFeatures]; 
+      for (int i = 1; i < nLocalRegressionSamples; i++)
+	tempLHS[i] = tempLHS[i - 1] + algParams.nFeatures;
+    }
+    
   }
   
   /* Random number generator initialization. */
@@ -340,87 +361,92 @@ void LinearArch::makeCoefs(double (*trueFcnRef)(InputParams const &,
       tempB[p] = (*trueFcn)(algParams, trueFcnInputs, stateSample);
     }
 
-        /* Collect results on master node. */
-    if (algParams.rank != 0)
+    if (nLocalRegressionSamples != 0)
     {
-      MPI_Send(tempLHS[0], sizeof(double) * nLocalRegressionSamples 
-	       * algParams.nFeatures, 
-      	       MPI_CHAR, 0, algParams.rank, MPI_COMM_WORLD);
-
-      MPI_Send(&(tempB[0]), sizeof(double) * nLocalRegressionSamples, 
-	       MPI_CHAR, 0, algParams.rank + algParams.nTasks, MPI_COMM_WORLD);
-    }
-    else
-    {
-      
-      /* Store local trajectories computed on master node. */
-      for (unsigned int i = 0; i < tempB.size(); i++)
-	B[i] = tempB[i];
-
-      for (int i = 0; i < nLocalRegressionSamples * algParams.nFeatures; i++)
-      	LHS[0][i] = tempLHS[0][i];
-
-      /* Receive and store trajectories computed from other nodes. */
-      for (int r = 1; r < algParams.nTasks; r++)
+      /* Collect results on master node. */
+      if (algParams.rank != 0)
       {
-	MPI_Recv(LHS[nLocalRegressionSamplesAllSum[r - 1]], 
-		 sizeof(double) * nLocalRegressionSamplesAll[r] 
-		 * algParams.nFeatures, MPI_CHAR, 
-		 r, r, MPI_COMM_WORLD, &algParams.status);
+	MPI_Send(tempLHS[0], sizeof(double) * nLocalRegressionSamples 
+		 * algParams.nFeatures, 
+		 MPI_CHAR, 0, algParams.rank, MPI_COMM_WORLD);
 	
-	MPI_Recv(&(B[nLocalRegressionSamplesAllSum[r - 1]]), 
-		 sizeof(double) * nLocalRegressionSamplesAll[r], MPI_CHAR, 
-		 r, r + algParams.nTasks, MPI_COMM_WORLD, &algParams.status);
+	MPI_Send(&(tempB[0]), sizeof(double) * nLocalRegressionSamples, 
+		 MPI_CHAR, 0, algParams.rank + algParams.nTasks, MPI_COMM_WORLD);
+      }
+      else
+      {
+	
+	/* Store local trajectories computed on master node. */
+	for (unsigned int i = 0; i < tempB.size(); i++)
+	  B[i] = tempB[i];
+	
+	for (int i = 0; i < nLocalRegressionSamples * algParams.nFeatures; i++)
+	  LHS[0][i] = tempLHS[0][i];
+	
+	/* Receive and store trajectories computed from other nodes. */
+	for (int r = 1; r < algParams.nTasks; r++)
+	{
+	  if (nLocalRegressionSamplesAllSum[r] != 0)
+	  {
+	    MPI_Recv(LHS[nLocalRegressionSamplesAllSum[r - 1]], 
+		     sizeof(double) * nLocalRegressionSamplesAll[r] 
+		     * algParams.nFeatures, MPI_CHAR, 
+		     r, r, MPI_COMM_WORLD, &algParams.status);
+	    
+	    MPI_Recv(&(B[nLocalRegressionSamplesAllSum[r - 1]]), 
+		     sizeof(double) * nLocalRegressionSamplesAll[r], MPI_CHAR, 
+		     r, r + algParams.nTasks, MPI_COMM_WORLD, &algParams.status);
+	  }
+	}
+	
+	RHS = B;
+	
+	for (unsigned int p = 0; p < ATrans[0].size(); p++)
+	{
+	  for (unsigned int i = 0; i < ATrans.size(); i++)
+	    ATrans[i][p] = LHS[p][i];
+	}
+
+	/* Solve linear least squares problem. Linear least square
+	 * solve verified with MATLAB. */
+	linearLeastSquares(ATrans, singularValues, B, work, lwork, soln);
+
+	// cout << "LHS = " << endl;
+	// for (unsigned int i = 0; i < LHS.size(); i++)
+	// {
+	//   for (unsigned int j = 0; j < LHS[0].size(); j++)
+	// 	cout << LHS[i][j] << "  ";
+	//   cout << endl;
+	// }
+	// cout << endl;
+
+	// for (unsigned int i = 0; i < RHS.size(); i++)
+	// {
+	//   RHS[i] = i;
+	//   B[i] = RHS[i];
+	// }
+
+	// cout << "RHS = " << endl;
+	// for (unsigned int i = 0; i < RHS.size(); i++)
+	//   cout << B[i] << endl;
+	// cout << endl;
+
+
+	// cout << "soln = " << endl;
+	// for (unsigned int i = 0; i < soln.size(); i++)
+	//   cout << i << "  " << B[i] << endl;
+	
+	/* Store features coefficients. */
+	for (unsigned int i = 0; i < soln.size(); i++)
+	  featuresCoefs[i] = soln[i];
+	
       }
       
-    }
-
-    RHS = B;
-
-    for (unsigned int p = 0; p < ATrans[0].size(); p++)
-    {
-      for (unsigned int i = 0; i < ATrans.size(); i++)
-	ATrans[i][p] = LHS[p][i];
-    }
-
-    // cout << "LHS = " << endl;
-    // for (unsigned int i = 0; i < LHS.size(); i++)
-    // {
-    //   for (unsigned int j = 0; j < LHS[0].size(); j++)
-    // 	cout << LHS[i][j] << "  ";
-    //   cout << endl;
-    // }
-    // cout << endl;
-
-    // for (unsigned int i = 0; i < RHS.size(); i++)
-    // {
-    //   RHS[i] = i;
-    //   B[i] = RHS[i];
-    // }
-
-    // cout << "RHS = " << endl;
-    // for (unsigned int i = 0; i < RHS.size(); i++)
-    //   cout << B[i] << endl;
-    // cout << endl;
-
-    if (algParams.rank == 0)
-    {
-      /* Solve linear least squares problem. Linear least square solve
-       * verified with MATLAB. */
-      linearLeastSquares(ATrans, singularValues, B, work, lwork, soln);
-      
-      /* Store features coefficients. */
-      for (unsigned int i = 0; i < soln.size(); i++)
-	featuresCoefs[i] = soln[i];
     }
 
     /* Broadcast features coefficients from master node. */
     MPI_Bcast(&(featuresCoefs[0]), sizeof(double) * featuresCoefs.size(), MPI_CHAR, 0,
 	      MPI_COMM_WORLD);
-
-    // cout << "soln = " << endl;
-    // for (unsigned int i = 0; i < soln.size(); i++)
-    //   cout << i << "  " << B[i] << endl;
     
     break;
     
@@ -452,8 +478,9 @@ void LinearArch::evalAllFeatures(vector<double> const &inputVar,
     storage[0] = 1.0;
     storage[1] = inputVar[0];
     storage[2] = inputVar[0] * inputVar[0];
-    storage[3] = inputVar[1];
-    storage[4] = log(inputVar[1]);
+    storage[3] = log(inputVar[1]);
+    storage[4] = log(inputVar[1]) * log(inputVar[1]);
+    storage[5] = inputVar[0] * log(inputVar[1]);
     
     break;
     
@@ -485,8 +512,9 @@ void LinearArch::evalAllFeatures(vector<double> const &inputVar,
     storage[0] = 1.0;
     storage[1] = inputVar[0];
     storage[2] = inputVar[0] * inputVar[0];
-    storage[3] = inputVar[1];
-    storage[4] = log(inputVar[1]);
+    storage[3] = log(inputVar[1]);
+    storage[4] = log(inputVar[1]) * log(inputVar[1]);
+    storage[5] = inputVar[0] * log(inputVar[1]);
     
     break;
     
